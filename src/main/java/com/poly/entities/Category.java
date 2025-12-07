@@ -21,7 +21,10 @@ public class Category {
 
     @Column(name = "name", nullable = false)
     private String name;
+    @Column(name = "status", nullable = false)
+    private int status = 1; // 1: Active, 0: Inactive
 
     @OneToMany(mappedBy = "category")
     private List<Video> video;
+
 }

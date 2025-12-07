@@ -69,25 +69,23 @@ body {
                     <h6 class="m-0 fw-bold text-primary">Thêm/Cập nhật Danh mục</h6>
                 </div>
                 <div class="card-body">
-                    <form class="row g-3" method="POST" action="${pageContext.request.contextPath}/admin/categories">
+                    <form id="categoryForm" class="row g-3">
+                        <input type="hidden" id="categoryId" name="id" value="">
                         <div class="col-md-6">
                             <label for="categoryName" class="form-label">Tên danh mục</label>
                             <input type="text"
-                                   class="form-control ${not empty bean.errors.errTitle ? 'is-invalid' : ''}"
+                                   class="form-control"
                                    id="categoryName"
                                    name="categoryname"
-                                   value="${bean.categoryname}"
                                    placeholder="Ví dụ: Hành động, Tình cảm..."
-                                   >
-                            <c:if test="${not empty bean.errors.errTitle}">
-                                <div class="invalid-feedback">${bean.errors.errTitle}</div>
-                            </c:if>
+                                   required>
+                            <div class="invalid-feedback" id="categoryNameError"></div>
                         </div>
                         <div class="col-12">
                             <button type="submit" class="btn btn-primary" style="background-color: var(--sidebar-bg); border-color: var(--sidebar-bg);">
-                                <i class="fa-solid fa-floppy-disk me-2"></i> Lưu danh mục
+                                <i class="fa-solid fa-floppy-disk me-2"></i> <span id="formButtonText">Lưu danh mục</span>
                             </button>
-                            <button type="reset" class="btn btn-outline-secondary ms-2">
+                            <button type="button" class="btn btn-outline-secondary ms-2" onclick="resetForm()">
                                 <i class="fa-solid fa-xmark me-2"></i> Hủy
                             </button>
                         </div>
@@ -111,35 +109,13 @@ body {
                                     <th style="width: 15%;">Hành động</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="categoryTableBody">
+                                <!-- Dữ liệu sẽ được load động qua AJAX -->
                                 <tr>
-                                    <td>1</td>
-                                    <td>Hành động</td>
-                                    <td><span class="badge bg-primary">50</span></td>
-                                    <td><span class="badge bg-success">Active</span></td>
-                                    <td>
-                                        <button class="btn btn-sm btn-warning me-1" title="Sửa"><i class="fa-solid fa-pen-to-square"></i></button>
-                                        <button class="btn btn-sm btn-danger" title="Tắt kích hoạt (Disabled)"><i class="fa-solid fa-toggle-on"></i></button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>2</td>
-                                    <td>Khoa học viễn tưởng</td>
-                                    <td><span class="badge bg-secondary">35</span></td>
-                                    <td><span class="badge bg-secondary">Inactive</span></td>
-                                    <td>
-                                        <button class="btn btn-sm btn-warning me-1" title="Sửa"><i class="fa-solid fa-pen-to-square"></i></button>
-                                        <button class="btn btn-sm btn-success" title="Bật kích hoạt (Active)"><i class="fa-solid fa-toggle-off"></i></button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>3</td>
-                                    <td>Tình cảm</td>
-                                    <td><span class="badge bg-primary">80</span></td>
-                                    <td><span class="badge bg-success">Active</span></td>
-                                    <td>
-                                        <button class="btn btn-sm btn-warning me-1" title="Sửa"><i class="fa-solid fa-pen-to-square"></i></button>
-                                        <button class="btn btn-sm btn-danger" title="Tắt kích hoạt (Disabled)"><i class="fa-solid fa-toggle-on"></i></button>
+                                    <td colspan="5" class="text-center">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Đang tải...</span>
+                                        </div>
                                     </td>
                                 </tr>
                             </tbody>
@@ -152,5 +128,213 @@ body {
     </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+    // ==================== GLOBAL VARIABLES ====================
+    const API_URL = '${pageContext.request.contextPath}/api/admin/categories';
+    let categories = []; // Lưu trữ danh sách categories
+
+    // ==================== DOM READY - LOAD DATA ====================
+    document.addEventListener('DOMContentLoaded', function() {
+        loadCategories();
+        setupFormSubmit();
+    });
+
+    // ==================== LOAD CATEGORIES FROM API ====================
+    async function loadCategories() {
+        try {
+            const response = await axios.get(API_URL);
+            categories = response.data;
+            renderCategoriesTable();
+        } catch (error) {
+            console.error('Error loading categories:', error);
+            showErrorInTable('Không thể tải danh sách danh mục. Vui lòng thử lại sau.');
+        }
+    }
+
+    // ==================== RENDER TABLE (Optimized String Concatenation) ====================
+    function renderCategoriesTable() {
+        const tbody = document.getElementById('categoryTableBody');
+
+        if (!categories || categories.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Chưa có danh mục nào</td></tr>';
+            return;
+        }
+
+        // Sử dụng Array.map() và Array.join() để tạo chuỗi HTML, hiệu quả hơn nối chuỗi đơn lẻ
+        tbody.innerHTML = categories.map(function(cat) {
+            const isActive = cat.status === 1;
+            const statusBadge = isActive
+                ? '<span class="badge bg-success">Active</span>'
+                : '<span class="badge bg-secondary">Inactive</span>';
+
+            // Lỗi: `$` trước cat.id trong onclick. Cần sửa thành dấu nháy đơn `'` hoặc bỏ qua (nếu biến đã có sẵn).
+            // Sửa: loại bỏ ký tự `$` dư thừa.
+            const toggleButton = isActive
+                ? '<button class="btn btn-sm btn-danger" onclick="toggleStatus(' + cat.id + ', 0)" title="Ẩn danh mục">' +
+                    '<i class="fa-solid fa-toggle-on"></i>' +
+                  '</button>'
+                : '<button class="btn btn-sm btn-success" onclick="toggleStatus(' + cat.id + ', 1)" title="Hiển thị danh mục">' +
+                    '<i class="fa-solid fa-toggle-off"></i>' +
+                  '</button>';
+
+            return '<tr>' +
+                '<td>' + cat.id + '</td>' +
+                '<td>' + escapeHtml(cat.name) + '</td>' +
+                '<td><span class="badge bg-primary">' + (cat.videoCount || 0) + '</span></td>' +
+                '<td>' + statusBadge + '</td>' +
+                '<td>' +
+                    '<button class="btn btn-sm btn-warning me-1" onclick="editCategory(' + cat.id + ')" title="Sửa">' +
+                        '<i class="fa-solid fa-pen-to-square"></i>' +
+                    '</button>' +
+                    toggleButton +
+                '</td>' +
+            '</tr>';
+        }).join('');
+    }
+
+    // ==================== SHOW ERROR IN TABLE ====================
+    function showErrorInTable(message) {
+        const tbody = document.getElementById('categoryTableBody');
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">' + message + '</td></tr>';
+    }
+
+    // ==================== SETUP FORM SUBMIT ====================
+    function setupFormSubmit() {
+        const form = document.getElementById('categoryForm');
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const categoryId = document.getElementById('categoryId').value;
+            const categoryName = document.getElementById('categoryName').value.trim();
+
+            if (!categoryName) {
+                showValidationError('categoryName', 'Tên danh mục không được để trống');
+                return;
+            }
+
+            clearValidationError('categoryName');
+
+            try {
+                const formData = new FormData();
+                formData.append('categoryname', categoryName);
+                formData.append('id', categoryId); // Luôn gửi ID, nếu rỗng thì là ADD
+
+                const action = categoryId ? 'update' : 'add';
+                formData.append('action', action);
+
+                const response = await axios.post(API_URL, formData);
+
+                if (response.data.status === 'success') {
+                    showAlert('success', response.data.message);
+                    resetForm();
+                    loadCategories(); // Reload data
+                } else {
+                    showAlert('danger', response.data.message);
+                }
+            } catch (error) {
+                console.error('Error submitting form:', error);
+                const errorMessage = error.response && error.response.data && error.response.data.message
+                    ? error.response.data.message
+                    : 'Có lỗi xảy ra khi xử lý yêu cầu';
+                showAlert('danger', errorMessage);
+            }
+        });
+    }
+
+    // ==================== EDIT CATEGORY ====================
+    function editCategory(id) {
+        const category = categories.find(function(cat) { return cat.id === id; });
+        if (!category) return;
+
+        document.getElementById('categoryId').value = category.id;
+        document.getElementById('categoryName').value = category.name;
+        document.getElementById('formButtonText').textContent = 'Cập nhật danh mục';
+
+        // Scroll to form
+        document.getElementById('categoryForm').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // ==================== TOGGLE STATUS ====================
+    async function toggleStatus(id, newStatus) {
+        const confirmation = newStatus === 0 ? 'Bạn có chắc muốn ẩn danh mục này?' : 'Bạn có chắc muốn hiển thị danh mục này?';
+        if (!confirm(confirmation)) {
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append('action', 'status');
+            formData.append('id', id);
+            formData.append('value', newStatus);
+
+            const response = await axios.post(API_URL, formData);
+
+            if (response.data.status === 'success') {
+                showAlert('success', response.data.message);
+                loadCategories(); // Reload data
+            } else {
+                showAlert('danger', response.data.message);
+            }
+        } catch (error) {
+            console.error('Error toggling status:', error);
+            showAlert('danger', 'Có lỗi xảy ra khi cập nhật trạng thái');
+        }
+    }
+
+    // ==================== RESET FORM ====================
+    function resetForm() {
+        document.getElementById('categoryForm').reset();
+        document.getElementById('categoryId').value = '';
+        document.getElementById('formButtonText').textContent = 'Lưu danh mục';
+        clearValidationError('categoryName');
+    }
+
+    // ==================== VALIDATION HELPERS ====================
+    function showValidationError(fieldId, message) {
+        const field = document.getElementById(fieldId);
+        const errorDiv = document.getElementById(fieldId + 'Error');
+        field.classList.add('is-invalid');
+        if (errorDiv) errorDiv.textContent = message;
+    }
+
+    function clearValidationError(fieldId) {
+        const field = document.getElementById(fieldId);
+        const errorDiv = document.getElementById(fieldId + 'Error');
+        field.classList.remove('is-invalid');
+        if (errorDiv) errorDiv.textContent = '';
+    }
+
+    // ==================== ALERT HELPER (Gọn hơn, không dùng backtick) ====================
+    function showAlert(type, message) {
+        const alertDiv = document.createElement('div');
+        // Sửa lỗi cú pháp: $ trước type/message
+        alertDiv.className = 'alert alert-' + type + ' alert-dismissible fade show';
+        alertDiv.role = 'alert';
+        alertDiv.innerHTML = message +
+            '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+
+        const container = document.querySelector('.container-fluid');
+        container.insertBefore(alertDiv, container.firstChild);
+
+        // Auto dismiss after 5 seconds
+        setTimeout(function() {
+            alertDiv.remove();
+        }, 5000);
+    }
+
+    // ==================== HTML ESCAPE ====================
+    function escapeHtml(text) {
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        // Sửa lỗi cú pháp: sử dụng `function` thay vì arrow function
+        return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+    }
+</script>
 </body>
 </html>

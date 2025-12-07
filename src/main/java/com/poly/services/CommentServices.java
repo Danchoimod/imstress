@@ -22,7 +22,7 @@ public class CommentServices {
         EntityManager manager = JPAUtils.getEntityManager();
         try {
             String sql =  "Select *from comments\n" +
-                    "where video_id = ?1 ORDER BY id DESC;";
+                    "where video_id = ?1 and status = 1 ORDER BY id DESC;";
             // Sử dụng Native Query để truy vấn cơ sở dữ liệu
             Query query = manager.createNativeQuery(sql,Comment.class);
             query.setParameter(1,id);
@@ -62,6 +62,55 @@ public class CommentServices {
             return null;
         } finally {
             manager.close();
+        }
+    }
+    public static List<Comment> getAllComments() {
+        EntityManager manager = JPAUtils.getEntityManager();
+        try {
+            // Lấy tất cả comment, bao gồm cả comment bị ẩn (status=false)
+            String sql = "SELECT * FROM comments ORDER BY id DESC";
+            Query query = manager.createNativeQuery(sql, Comment.class);
+            return query.getResultList();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        } finally {
+            if (manager != null) {
+                manager.close();
+            }
+        }
+    }
+
+    /**
+     * Cập nhật trạng thái (ẩn/hiện) của một bình luận.
+     * @param commentId ID của bình luận cần cập nhật.
+     * @param newStatus Trạng thái mới (true: Hiện, false: Ẩn).
+     * @return true nếu thành công, false nếu thất bại.
+     */
+    public static boolean updateCommentStatus(int commentId, boolean newStatus) {
+        EntityManager manager = JPAUtils.getEntityManager();
+        EntityTransaction transaction = manager.getTransaction();
+        try {
+            Comment comment = manager.find(Comment.class, commentId);
+            if (comment == null) return false;
+
+            if (!transaction.isActive()) {
+                transaction.begin();
+            }
+            comment.setStatus(newStatus); // Cập nhật trạng thái
+            manager.merge(comment);       // Cập nhật Entity
+            transaction.commit();
+            return true;
+        } catch (Exception e) {
+            if (transaction != null && transaction.isActive()) {
+                transaction.rollback();
+            }
+            e.printStackTrace();
+            return false;
+        } finally {
+            if (manager != null) {
+                manager.close();
+            }
         }
     }
 }

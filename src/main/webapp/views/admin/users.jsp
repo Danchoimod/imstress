@@ -199,7 +199,6 @@ body {
         });
     }
 
-    // --- HÀM UPDATE TRẠNG THÁI/VAI TRÒ ---
     async function updateUser(userId, action, value, actionName) {
         // SỬ DỤNG NỐI CHUỖI THUẦN
         if (confirm("Bạn có chắc chắn muốn " + actionName + " người dùng ID: " + userId + " không?")) {

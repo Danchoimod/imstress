@@ -5,10 +5,9 @@ import com.poly.util.JPAUtils;
 import com.poly.util.Utils;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityTransaction; // Import for transaction
 import jakarta.persistence.Query;
 
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,72 +17,101 @@ public class CategoryServices{
         List<Category> categories = new ArrayList<>();
         EntityManager manager = JPAUtils.getEntityManager();
         try {
+            // Sửa: Lấy tất cả, bao gồm cả cột 'status' nếu nó tồn tại trong DB
             String sql = "Select *from categories";
-            manager.createNativeQuery(sql, Category.class);// ánh xạ class
             Query query = manager.createNativeQuery(sql, Category.class);
             categories = query.getResultList();
         } catch (Exception e) {
             e.printStackTrace();
+        } finally { // Thêm finally để đảm bảo manager được đóng
+            if (manager != null) {
+                manager.close();
+            }
         }
-        manager.close();
-
         return categories;
     }
+
     public static String addCategory(Category category){ //giá trị trả về dạng chuỗi
         EntityManager manager = JPAUtils.getEntityManager();
+        EntityTransaction transaction = manager.getTransaction(); // Lấy transaction
         try{
-        String sql = "SELECT *FROM category where Lower(name)=?1";
-
-        Query query =  manager.createNativeQuery(sql, Category.class);// ánh xạ
-            //truyền giá trị vào câu truy vấn (1)
+            // Kiểm tra trùng tên (NÊN SỬ DỤNG JPQL HOẶC NATIVE QUERY CHÍNH XÁC HƠN)
+            // Hiện tại ta dùng logic của user:
+            String sql = "SELECT *FROM categories where Lower(name)=?1"; // Sửa 'category' -> 'categories'
+            Query query =  manager.createNativeQuery(sql, Category.class);// ánh xạ
             query.setParameter(1,category.getName().trim().toLowerCase());
 
-            Category categoryCheck = (Category) query.getSingleResult(); //ép kiểu trả về 1 object duy nhất
+            List<Category> categoryChecks = query.getResultList();
 
-            if(categoryCheck != null){
-                return "tên danh mục đã tồn tại ";
+            if(!categoryChecks.isEmpty()){ // Kiểm tra nếu có kết quả trả về
+                return "tên danh mục đã tồn tại";
             }
-// 1. Bắt đầu giao dịch (nếu chưa có)
-            if(!manager.getTransaction().isActive()){
-                manager.getTransaction().begin();
+
+            // 1. Bắt đầu giao dịch (nếu chưa có)
+            if(!transaction.isActive()){
+                transaction.begin();
             }
             category.setName(Utils.capitalizeString(category.getName())); // chuẩn hóa tên
-            manager.persist(category); //Đánh dấu đối tượng cần được lưu
-            manager.getTransaction().commit(); //Hibernate tự động sinh và chạy lệnh SQL INSERT
+
+            // Đảm bảo status được set (giả định field status có sẵn)
+            category.setStatus(1); // Set default status to Active (1)
+
+            manager.persist(category); //Lưu đối tượng
+            transaction.commit(); //Hibernate tự động sinh và chạy lệnh SQL INSERT
 
         } catch (Exception e) {
             e.printStackTrace();
-            manager.getTransaction().rollback();
+            if (transaction.isActive()) {
+                transaction.rollback();
+            }
             return "Có lỗi khi thêm danh mục";
+        } finally {
+            manager.close();
         }
-        manager.close();
         return null;
     }
-    public static String UpdateCategory(Category category){ //trả về dạng chuỗi
-        EntityManager manager = JPAUtils.getEntityManager();
-        try {
-            String sql = "select *from category where LOWER(name) = ?1 AND id =?2";
-            Query query = manager.createNativeQuery(sql, Category.class);
-            query.setParameter(1,category.getName());
-            query.setParameter(2,category.getId());
 
-            //lấy kết quả
-            Category categoryCheck = (Category) query.getSingleResult();
-            if(categoryCheck != null){
+    // Cập nhật UpdateCategory để dùng merge và kiểm tra trùng tên ngoại trừ chính nó
+    public static String UpdateCategory(Category category){
+        EntityManager manager = JPAUtils.getEntityManager();
+        EntityTransaction transaction = manager.getTransaction();
+        try {
+            // Kiểm tra trùng tên, loại trừ ID hiện tại
+            String sqlCheck = "SELECT *FROM categories where LOWER(name) = ?1 AND id <> ?2";
+            Query queryCheck = manager.createNativeQuery(sqlCheck, Category.class);
+            queryCheck.setParameter(1, category.getName().trim().toLowerCase());
+            queryCheck.setParameter(2, category.getId());
+
+            List<Category> categoryChecks = queryCheck.getResultList();
+            if(!categoryChecks.isEmpty()){
                 return "danh mục đã tồn tại";
             }
-            if(!manager.getTransaction().isActive()){
-                manager.getTransaction().begin();
+
+            // Lấy entity cần update
+            Category existingCategory = manager.find(Category.class, category.getId());
+            if (existingCategory == null) {
+                return "Không tìm thấy danh mục để cập nhật";
             }
-            category.setName(Utils.capitalizeString(category.getName())); // chuẩn hóa tên
-            manager.persist(category);
-            manager.getTransaction().commit();
+
+            if(!transaction.isActive()){
+                transaction.begin();
+            }
+
+            // Cập nhật các trường
+            existingCategory.setName(Utils.capitalizeString(category.getName()));
+            // Giữ nguyên status hiện tại (existingCategory.getStatus())
+
+            manager.merge(existingCategory); // Sử dụng merge cho update
+            transaction.commit();
         } catch (Exception e) {
-            manager.getTransaction().rollback();
+            if (transaction.isActive()) {
+                transaction.rollback();
+            }
             e.printStackTrace();
             return "Lỗi trong quá trình cập nhật";
+        } finally {
+            manager.close();
         }
-    manager.close();
         return null;
     }
 
@@ -92,15 +120,42 @@ public class CategoryServices{
 
         try {
             Category category = manager.find(Category.class, id);
-
-            manager.close();
             return category;
         } catch (Exception e) {
             e.printStackTrace();
+            return null;
+        } finally { // Đảm bảo manager được đóng
+            if (manager != null) {
+                manager.close();
+            }
         }
+    }
 
-        manager.close();
-        return null;
+    // NEW METHOD: Update Category Status (for Hiding/Displaying)
+    public static boolean updateCategoryStatus(int categoryId, int newStatus) {
+        EntityManager manager = JPAUtils.getEntityManager();
+        EntityTransaction transaction = manager.getTransaction();
+        try {
+            Category category = manager.find(Category.class, categoryId);
+            if (category == null) return false;
+
+            if (!transaction.isActive()) {
+                transaction.begin();
+            }
+            category.setStatus(newStatus);
+            manager.merge(category);
+            transaction.commit();
+            return true;
+        } catch (Exception e) {
+            if (transaction != null && transaction.isActive()) {
+                transaction.rollback();
+            }
+            e.printStackTrace();
+            return false;
+        } finally {
+            if (manager != null) {
+                manager.close();
+            }
+        }
     }
 }
-
