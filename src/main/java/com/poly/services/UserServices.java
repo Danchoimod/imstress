@@ -2,12 +2,10 @@ package com.poly.services;
 
 import com.poly.entities.User;
 import com.poly.util.JPAUtils;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.Persistence;
-import jakarta.persistence.Query;
+import jakarta.persistence.*;
 
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -83,5 +81,78 @@ public class UserServices {
         }
         manager.close();
         return null;
+    }
+    // NEW METHOD: Get all users
+    public static List<User> getAllUsers() {
+        EntityManager manager = JPAUtils.getEntityManager();
+        try {
+            // Lấy tất cả người dùng, sắp xếp theo ID
+            String sql = "SELECT * FROM users ORDER BY id ASC";
+            Query query = manager.createNativeQuery(sql, User.class);
+            return query.getResultList();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        } finally {
+            if (manager != null) {
+                manager.close();
+            }
+        }
+    }
+
+    // NEW METHOD: Update user role
+    public static boolean updateUserRole(int userId, int newRole) {
+        EntityManager manager = JPAUtils.getEntityManager();
+        EntityTransaction transaction = manager.getTransaction();
+        try {
+            User user = manager.find(User.class, userId);
+            if (user == null) return false;
+
+            if (!transaction.isActive()) {
+                transaction.begin();
+            }
+            user.setRole(newRole);
+            manager.merge(user); // Sử dụng merge để cập nhật entity
+            transaction.commit();
+            return true;
+        } catch (Exception e) {
+            if (transaction != null && transaction.isActive()) {
+                transaction.rollback();
+            }
+            e.printStackTrace();
+            return false;
+        } finally {
+            if (manager != null) {
+                manager.close();
+            }
+        }
+    }
+
+    // NEW METHOD: Update user status
+    public static boolean updateUserStatus(int userId, int newStatus) {
+        EntityManager manager = JPAUtils.getEntityManager();
+        EntityTransaction transaction = manager.getTransaction();
+        try {
+            User user = manager.find(User.class, userId);
+            if (user == null) return false;
+
+            if (!transaction.isActive()) {
+                transaction.begin();
+            }
+            user.setStatus(newStatus);
+            manager.merge(user); // Sử dụng merge để cập nhật entity
+            transaction.commit();
+            return true;
+        } catch (Exception e) {
+            if (transaction != null && transaction.isActive()) {
+                transaction.rollback();
+            }
+            e.printStackTrace();
+            return false;
+        } finally {
+            if (manager != null) {
+                manager.close();
+            }
+        }
     }
 }

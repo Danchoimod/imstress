@@ -12,6 +12,9 @@ public class UserReponse {
     String fullname;
     String email;
     String phone;
+    // THÊM: role và status
+    int role;
+    int status;
 
     public UserReponse(User user) {
     }
