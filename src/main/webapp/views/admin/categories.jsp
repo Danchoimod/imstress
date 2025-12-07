@@ -199,48 +199,60 @@ body {
         tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">' + message + '</td></tr>';
     }
 
-    // ==================== SETUP FORM SUBMIT ====================
-    function setupFormSubmit() {
-        const form = document.getElementById('categoryForm');
-        form.addEventListener('submit', async function(e) {
-            e.preventDefault();
+   // ==================== SETUP FORM SUBMIT ====================
+   function setupFormSubmit() {
+       const form = document.getElementById('categoryForm');
+       form.addEventListener('submit', async function(e) {
+           e.preventDefault();
 
-            const categoryId = document.getElementById('categoryId').value;
-            const categoryName = document.getElementById('categoryName').value.trim();
+           const categoryId = document.getElementById('categoryId').value;
+           const categoryName = document.getElementById('categoryName').value.trim();
 
-            if (!categoryName) {
-                showValidationError('categoryName', 'Tên danh mục không được để trống');
-                return;
-            }
+           if (!categoryName) {
+               showValidationError('categoryName', 'Tên danh mục không được để trống');
+               return;
+           }
 
-            clearValidationError('categoryName');
+           clearValidationError('categoryName');
 
-            try {
-                const formData = new FormData();
-                formData.append('categoryname', categoryName);
-                formData.append('id', categoryId); // Luôn gửi ID, nếu rỗng thì là ADD
+           try {
+               // SỬA LỖI: Chuyển sang dùng URLSearchParams để đảm bảo Content-Type là application/x-www-form-urlencoded
+               const params = new URLSearchParams();
+               params.append('categoryname', categoryName);
+               params.append('id', categoryId); // Luôn gửi ID, nếu rỗng thì là ADD
 
-                const action = categoryId ? 'update' : 'add';
-                formData.append('action', action);
+               const action = categoryId ? 'update' : 'add';
+               params.append('action', action);
 
-                const response = await axios.post(API_URL, formData);
+               // Gửi dữ liệu dưới dạng URL-encoded string và đặt header thủ công
+               const response = await axios.post(
+                   API_URL,
+                   params.toString(), // Chuyển URLSearchParams thành chuỗi POST data
+                   {
+                       headers: {
+                           'Content-Type': 'application/x-www-form-urlencoded'
+                       }
+                   }
+               );
 
-                if (response.data.status === 'success') {
-                    showAlert('success', response.data.message);
-                    resetForm();
-                    loadCategories(); // Reload data
-                } else {
-                    showAlert('danger', response.data.message);
-                }
-            } catch (error) {
-                console.error('Error submitting form:', error);
-                const errorMessage = error.response && error.response.data && error.response.data.message
-                    ? error.response.data.message
-                    : 'Có lỗi xảy ra khi xử lý yêu cầu';
-                showAlert('danger', errorMessage);
-            }
-        });
-    }
+               if (response.data.status === 'success') {
+                   showAlert('success', response.data.message);
+                   resetForm();
+                   loadCategories(); // Reload data
+               } else {
+                   // Xử lý lỗi trả về từ server (ví dụ: Tên đã tồn tại)
+                   showAlert('danger', response.data.message);
+               }
+           } catch (error) {
+               console.error('Error submitting form:', error);
+               // Cải thiện hiển thị lỗi từ response nếu có
+               const errorMessage = error.response && error.response.data && error.response.data.message
+                   ? error.response.data.message
+                   : 'Có lỗi xảy ra khi xử lý yêu cầu';
+               showAlert('danger', errorMessage);
+           }
+       });
+   }
 
     // ==================== EDIT CATEGORY ====================
     function editCategory(id) {
@@ -255,32 +267,41 @@ body {
         document.getElementById('categoryForm').scrollIntoView({ behavior: 'smooth' });
     }
 
-    // ==================== TOGGLE STATUS ====================
-    async function toggleStatus(id, newStatus) {
-        const confirmation = newStatus === 0 ? 'Bạn có chắc muốn ẩn danh mục này?' : 'Bạn có chắc muốn hiển thị danh mục này?';
-        if (!confirm(confirmation)) {
-            return;
-        }
-
-        try {
-            const formData = new FormData();
-            formData.append('action', 'status');
-            formData.append('id', id);
-            formData.append('value', newStatus);
-
-            const response = await axios.post(API_URL, formData);
-
-            if (response.data.status === 'success') {
-                showAlert('success', response.data.message);
-                loadCategories(); // Reload data
-            } else {
-                showAlert('danger', response.data.message);
-            }
-        } catch (error) {
-            console.error('Error toggling status:', error);
-            showAlert('danger', 'Có lỗi xảy ra khi cập nhật trạng thái');
-        }
+// ==================== TOGGLE STATUS ====================
+async function toggleStatus(id, newStatus) {
+    const confirmation = newStatus === 0 ? 'Bạn có chắc muốn ẩn danh mục này?' : 'Bạn có chắc muốn hiển thị danh mục này?';
+    if (!confirm(confirmation)) {
+        return;
     }
+
+    try {
+        // SỬA LỖI: Dùng URLSearchParams
+        const params = new URLSearchParams();
+        params.append('action', 'status');
+        params.append('id', id);
+        params.append('value', newStatus);
+
+        const response = await axios.post(
+            API_URL,
+            params.toString(), // Chuyển URLSearchParams thành chuỗi POST data
+            {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+        );
+
+        if (response.data.status === 'success') {
+            showAlert('success', response.data.message);
+            loadCategories(); // Reload data
+        } else {
+            showAlert('danger', response.data.message);
+        }
+    } catch (error) {
+        console.error('Error toggling status:', error);
+        showAlert('danger', 'Có lỗi xảy ra khi cập nhật trạng thái');
+    }
+}
 
     // ==================== RESET FORM ====================
     function resetForm() {
