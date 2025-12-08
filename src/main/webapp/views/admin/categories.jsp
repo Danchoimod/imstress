@@ -187,7 +187,10 @@ body {
                     '<button class="btn btn-sm btn-warning me-1" onclick="editCategory(' + cat.id + ')" title="Sửa">' +
                         '<i class="fa-solid fa-pen-to-square"></i>' +
                     '</button>' +
-                    toggleButton +
+                    toggleButton + ' ' +
+                    '<button class="btn btn-sm btn-danger ms-1" onclick="deleteCategory(' + cat.id + ')" title="Xóa danh mục">' +
+                        '<i class="fa-solid fa-trash"></i>' +
+                    '</button>' +
                 '</td>' +
             '</tr>';
         }).join('');
@@ -302,6 +305,51 @@ async function toggleStatus(id, newStatus) {
         showAlert('danger', 'Có lỗi xảy ra khi cập nhật trạng thái');
     }
 }
+
+    // ==================== DELETE CATEGORY ====================
+    async function deleteCategory(id) {
+        const category = categories.find(function(cat) { return cat.id === id; });
+        if (!category) return;
+
+        // Kiểm tra số lượng video
+        if (category.videoCount > 0) {
+            showAlert('danger', 'Không thể xóa danh mục này vì còn ' + category.videoCount + ' video đang sử dụng!');
+            return;
+        }
+
+        if (!confirm('Bạn có chắc chắn muốn xóa danh mục "' + category.name + '" không?')) {
+            return;
+        }
+
+        try {
+            const params = new URLSearchParams();
+            params.append('action', 'delete');
+            params.append('id', id);
+
+            const response = await axios.post(
+                API_URL,
+                params.toString(),
+                {
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                }
+            );
+
+            if (response.data.status === 'success') {
+                showAlert('success', response.data.message);
+                loadCategories(); // Reload data
+            } else {
+                showAlert('danger', response.data.message);
+            }
+        } catch (error) {
+            console.error('Error deleting category:', error);
+            const errorMessage = error.response && error.response.data && error.response.data.message
+                ? error.response.data.message
+                : 'Có lỗi xảy ra khi xóa danh mục';
+            showAlert('danger', errorMessage);
+        }
+    }
 
     // ==================== RESET FORM ====================
     function resetForm() {

@@ -158,4 +158,48 @@ public class CategoryServices{
             }
         }
     }
+    public static Category getCategoryByName(String name) {
+        EntityManager manager = JPAUtils.getEntityManager();
+        Category category = null;
+        try {
+            String jpql = "SELECT c FROM Category c WHERE c.name = ?1";
+            Query query = manager.createQuery(jpql, Category.class);
+            query.setParameter(1, name);
+            category = (Category) query.getSingleResult();
+        } catch (Exception e) {
+            System.out.println("Không tìm thấy Category với tên: " + name);
+        } finally {
+            if (manager != null) {
+                manager.close();
+            }
+        }
+        return category;
+    }
+
+    // DELETE METHOD: Xóa category (chỉ xóa nếu không có video nào sử dụng)
+    public static boolean deleteCategory(int categoryId) {
+        EntityManager manager = JPAUtils.getEntityManager();
+        EntityTransaction transaction = manager.getTransaction();
+        try {
+            Category category = manager.find(Category.class, categoryId);
+            if (category == null) return false;
+
+            if (!transaction.isActive()) {
+                transaction.begin();
+            }
+            manager.remove(category);
+            transaction.commit();
+            return true;
+        } catch (Exception e) {
+            if (transaction != null && transaction.isActive()) {
+                transaction.rollback();
+            }
+            e.printStackTrace();
+            return false;
+        } finally {
+            if (manager != null) {
+                manager.close();
+            }
+        }
+    }
 }

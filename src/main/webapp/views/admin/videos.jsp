@@ -53,6 +53,7 @@ body {
         <div class="container-fluid">
 
             <c:if test="${not empty message}">
+
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
                     ${message}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -60,6 +61,7 @@ body {
             </c:if>
 
             <c:if test="${not empty error}">
+
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
                     ${error}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -68,11 +70,15 @@ body {
 
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
-                    <h6 class="m-0 fw-bold text-primary">Thêm/Cập nhật Video</h6>
+                    <h6 class="m-0 fw-bold text-primary" id="form-title">Thêm Video Mới</h6>
                 </div>
 
                 <div class="card-body">
-                    <form class="row g-3" method="POST">
+                    <form class="row g-3" method="POST" id="videoForm">
+
+                        <%-- TRƯỜNG ẨN DÙNG ĐỂ NHẬN DIỆN ĐANG SỬA VIDEO NÀO --%>
+                        <input type="hidden" id="videoId" name="videoId" value="${param.id}">
+
                         <div class="col-md-6">
                             <label for="title" class="form-label">Tiêu đề</label>
                             <input type="text" class="form-control ${not empty bean.errors.errTitle ? 'is-invalid' : ''}"
@@ -105,12 +111,10 @@ body {
                         </div>
                         <div class="col-md-6">
                             <label for="category" class="form-label">Danh mục</label>
+                            <%-- Dữ liệu danh mục sẽ được load bằng JavaScript --%>
                             <select id="category" name="category"
                                     class="form-select ${not empty bean.errors.errCategory ? 'is-invalid' : ''}">
                                 <option value="">Chọn danh mục</option>
-                                <option value="Hành động" ${bean.category == 'Hành động' ? 'selected' : ''}>Hành động</option>
-                                <option value="Khoa học viễn tưởng" ${bean.category == 'Khoa học viễn tưởng' ? 'selected' : ''}>Khoa học viễn tưởng</option>
-                                <option value="Tình cảm" ${bean.category == 'Tình cảm' ? 'selected' : ''}>Tình cảm</option>
                             </select>
                             <c:if test="${not empty bean.errors.errCategory}">
                                 <div class="invalid-feedback">${bean.errors.errCategory}</div>
@@ -127,11 +131,12 @@ body {
                         </div>
 
                         <div class="col-12">
-                            <button type="submit" class="btn btn-primary" style="background-color: var(--sidebar-bg); border-color: var(--sidebar-bg);">
+                            <button type="submit" class="btn btn-primary" id="saveBtn"
+                                    style="background-color: var(--sidebar-bg); border-color: var(--sidebar-bg);">
                                 <i class="fa-solid fa-cloud-arrow-up me-2"></i> Lưu video
                             </button>
-                            <button type="reset" class="btn btn-outline-secondary ms-2">
-                                <i class="fa-solid fa-xmark me-2"></i> Hủy
+                            <button type="button" onclick="resetForm()" class="btn btn-outline-secondary ms-2">
+                               <i class="fa-solid fa-xmark me-2"></i> Hủy / Thêm mới
                             </button>
                         </div>
                     </form>
@@ -141,7 +146,7 @@ body {
             <div class="card shadow mb-4">
                  <div class="card-header py-3">
                     <h6 class="m-0 fw-bold text-primary">Danh sách Video</h6>
-                </div>
+                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-bordered table-striped table-hover" width="100%" cellspacing="0">
@@ -158,7 +163,6 @@ body {
                                     <th>Hành động</th>
                                 </tr>
                             </thead>
-                            <%-- Thêm id và data-context-path vào tbody để JS có thể render dữ liệu --%>
                             <tbody id="bodyTableVideo" data-context-path="${pageContext.request.contextPath}">
                                 <%-- Dữ liệu sẽ được load bằng JavaScript --%>
                             </tbody>
@@ -173,38 +177,138 @@ body {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 
 <script>
+    // Biến toàn cục để lưu trữ danh sách video và danh mục
+    let allVideos = [];
+    let allCategories = [];
+    const bodyTable = document.getElementById("bodyTableVideo");
+    const contextPath = bodyTable.getAttribute("data-context-path");
+    const formTitle = document.getElementById("form-title");
+    const saveBtn = document.getElementById("saveBtn");
+    const videoIdInput = document.getElementById("videoId");
+    const categorySelect = document.getElementById("category");
+    const videoForm = document.getElementById("videoForm");
+
     document.addEventListener('DOMContentLoaded', function() {
-        getData();
+        // Khởi tạo: Lấy danh mục trước, sau đó lấy dữ liệu video
+        fetchCategories().then(getData);
+
+        // Setup form submit handler
+        setupFormSubmit();
+
+        // Nếu có lỗi validation từ Controller, hãy hiển thị lại form title
+        if (videoIdInput.value) {
+            formTitle.textContent = 'Cập nhật Video ID: ' + videoIdInput.value;
+            saveBtn.innerHTML = '<i class="fa-solid fa-pen-to-square me-2"></i> Cập nhật video';
+        }
     });
 
-    function getData() {
-        const bodyTable = document.getElementById("bodyTableVideo");
-        const contextPath = bodyTable.getAttribute("data-context-path");
-        console.log("start call api: " + contextPath + "/api/videos");
+    // -------------------- CÁC HÀM XỬ LÝ DANH MỤC --------------------
+    async function fetchCategories() {
+        try {
+            const res = await axios.get(contextPath + "/api/category");
+            allCategories = res.data;
+            renderCategories();
+        } catch (error) {
+            console.error("Lỗi khi tải danh mục:", error);
+            categorySelect.innerHTML = '<option value="">Lỗi tải danh mục</option>';
+        }
+    }
 
-        axios.get(contextPath + "/api/videos")
-        .then((res) => {
-            console.log(res.data);
-            const arrayHtml = res.data.map((element) => {
-                // Kiểm tra element.poster, nếu không có, dùng ảnh placeholder
+    function renderCategories() {
+        categorySelect.innerHTML = '<option value="">Chọn danh mục</option>';
+        allCategories.forEach(function(cat) {
+            const option = document.createElement('option');
+            option.value = cat.name;
+            option.textContent = cat.name;
+            categorySelect.appendChild(option);
+        });
+
+        // Nếu có bean.category từ server (sau post/validation), chọn lại danh mục đó
+        const preSelectedCategory = "${bean.category}";
+        if(preSelectedCategory) {
+            categorySelect.value = preSelectedCategory;
+        }
+    }
+
+    // -------------------- SETUP FORM SUBMIT --------------------
+    function setupFormSubmit() {
+        videoForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const videoId = videoIdInput.value;
+            const title = document.getElementById('title').value.trim();
+            const url = document.getElementById('url').value.trim();
+            const poster = document.getElementById('poster').value.trim();
+            const category = categorySelect.value;
+            const description = document.getElementById('description').value.trim();
+
+            // Basic client-side validation
+            if (!title || !url || !poster || !category || !description) {
+                showAlert('danger', 'Vui lòng điền đầy đủ tất cả các trường!');
+                return;
+            }
+
+            try {
+                const params = new URLSearchParams();
+                params.append('title', title);
+                params.append('url', url);
+                params.append('poster', poster);
+                params.append('category', category);
+                params.append('description', description);
+                if (videoId) {
+                    params.append('videoId', videoId);
+                }
+
+                const response = await axios.post(
+                    contextPath + '/api/admin/videos',
+                    params.toString(),
+                    {
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        }
+                    }
+                );
+
+                if (response.data.status === 'success') {
+                    showAlert('success', response.data.message);
+                    resetForm();
+                    getData(); // Reload data
+                } else {
+                    showAlert('danger', response.data.message);
+                }
+            } catch (error) {
+                console.error('Error submitting form:', error);
+                const errorMessage = error.response && error.response.data && error.response.data.message
+                    ? error.response.data.message
+                    : 'Có lỗi xảy ra khi xử lý yêu cầu';
+                showAlert('danger', errorMessage);
+            }
+        });
+    }
+
+    // -------------------- CÁC HÀM XỬ LÝ VIDEO --------------------
+
+    function getData() {
+        axios.get(contextPath + "/api/admin/videos")
+        .then(function(res) {
+            allVideos = res.data;
+            const arrayHtml = allVideos.map(function(element) {
                 const posterImg = element.poster ? element.poster : 'placeholder.jpg';
 
                 return "<tr>" +
                     "<td>" + element.id + "</td>" +
-                    "<td>" + element.title + "</td>" +
-                    "<td>" + element.authName + "</td>" +
-                    "<td><a href='" + element.url + "' target='_blank'>Link</a></td>" + // Thêm cột URL
-                    "<td><span class='badge bg-info'>" + element.catName + "</span></td>" +
-                    "<td>" + element.createAt + "</td>" + // Thêm Ngày tạo
-                    "<td>" + element.viewCount + "</td>" + // Thêm Lượt xem
-                    "<td><span class='badge bg-success'>" + element.status + "</span></td>" +
+                    "<td>" + escapeHtml(element.title) + "</td>" +
+                    "<td>" + escapeHtml(element.authName) + "</td>" +
+                    "<td><a href='" + escapeHtml(element.url) + "' target='_blank'>Link</a></td>" +
+                    "<td><span class='badge bg-info'>" + escapeHtml(element.catName) + "</span></td>" +
+                    "<td>" + element.createAt + "</td>" +
+                    "<td>" + element.viewCount + "</td>" +
+                    "<td><span class='badge bg-success'>" + (element.status === 1 ? 'Active' : 'Inactive') + "</span></td>" +
                     "<td>" +
-                        // Nút Sửa
-                        "<a class='btn btn-sm btn-warning me-1' href='" + contextPath + "/editer/video-form?id=" + element.id + "' title='Sửa'>" +
+                        "<button type='button' class='btn btn-sm btn-warning me-1' onclick='editVideo(" + element.id + ")' title='Sửa'>" +
                             "<i class='fa-solid fa-pen-to-square'></i>" +
-                        "</a>" +
-                        // Nút Xoá (gọi hàm deleteVideo)
-                        "<button class='btn btn-sm btn-danger' onclick='deleteVideo(" + element.id + ")' title='Xoá video'>" +
+                        "</button>" +
+                        "<button type='button' class='btn btn-sm btn-danger' onclick='deleteVideo(" + element.id + ")' title='Xoá video'>" +
                             "<i class='fa-solid fa-trash'></i>" +
                         "</button>" +
                     "</td>" +
@@ -212,20 +316,51 @@ body {
             });
             bodyTable.innerHTML = arrayHtml.join("");
         })
-        .catch((error) => {
+        .catch(function(error) {
             console.error("Lỗi khi tải dữ liệu:", error);
-            // Hiển thị thông báo lỗi ngay trong bảng
             bodyTable.innerHTML = "<tr><td colspan='9' class='text-center text-danger'>Không thể tải danh sách video. Vui lòng kiểm tra API.</td></tr>";
+        });
+    }
+
+    // Hàm điền dữ liệu vào form để chỉnh sửa
+    function editVideo(id) {
+        const video = allVideos.find(function(v) { return v.id === id; });
+        if (!video) return;
+
+        // 1. Điền dữ liệu vào form
+        videoIdInput.value = video.id;
+        document.getElementById("title").value = video.title;
+        document.getElementById("url").value = video.url;
+        document.getElementById("poster").value = video.poster;
+        document.getElementById("description").value = video.desc;
+
+        // 2. Chọn lại danh mục
+        categorySelect.value = video.catName;
+
+        // 3. Cập nhật tiêu đề form và nút bấm
+        formTitle.textContent = 'Cập nhật Video ID: ' + video.id;
+        saveBtn.innerHTML = '<i class="fa-solid fa-pen-to-square me-2"></i> Cập nhật video';
+
+        // 4. Scroll lên đầu form
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Hàm xóa dữ liệu form và chuyển về chế độ Thêm mới
+    function resetForm() {
+        videoForm.reset();
+        videoIdInput.value = "";
+        formTitle.textContent = "Thêm Video Mới";
+        saveBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up me-2"></i> Lưu video';
+
+        // Xóa các class is-invalid
+        document.querySelectorAll('.is-invalid').forEach(function(el) {
+            el.classList.remove('is-invalid');
         });
     }
 
     async function deleteVideo(id) {
         if (confirm("Bạn có chắc chắn muốn xóa video này không?")) {
-            const bodyTable = document.getElementById("bodyTableVideo");
-            const contextPath = bodyTable.getAttribute("data-context-path");
-
             try {
-                // Sử dụng URLSearchParams để gửi dữ liệu dạng application/x-www-form-urlencoded
                 const params = new URLSearchParams();
                 params.append("videoId", id);
 
@@ -242,17 +377,47 @@ body {
                 const res = response.data;
 
                 if (res.status === true) {
-                    alert(res.message);
+                    showAlert('success', res.message);
                     getData(); // Tải lại dữ liệu sau khi xóa thành công
                 } else {
-                    alert("Lỗi xóa video: " + res.message);
+                    showAlert('danger', 'Lỗi xóa video: ' + res.message);
                 }
 
             } catch (e) {
                 console.error("Lỗi hệ thống khi xóa:", e);
-                alert("Lỗi hệ thống: Không thể kết nối hoặc xử lý yêu cầu xóa.");
+                showAlert('danger', 'Lỗi hệ thống: Không thể kết nối hoặc xử lý yêu cầu xóa.');
             }
         }
+    }
+
+    // ==================== ALERT HELPER ====================
+    function showAlert(type, message) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-' + type + ' alert-dismissible fade show';
+        alertDiv.role = 'alert';
+        alertDiv.innerHTML = escapeHtml(message) +
+            '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+
+        const container = document.querySelector('.container-fluid');
+        container.insertBefore(alertDiv, container.firstChild);
+
+        // Auto dismiss after 5 seconds
+        setTimeout(function() {
+            alertDiv.remove();
+        }, 5000);
+    }
+
+    // ==================== HTML ESCAPE ====================
+    function escapeHtml(text) {
+        if (!text) return '';
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
     }
 </script>
 </body>

@@ -17,6 +17,9 @@ public class VideoBean {
     private String category;
     private String description;
 
+    // THÊM TRƯỜNG videoId
+    private String videoId;
+
     /**
      * Phương thức kiểm tra và trả về Map các lỗi validation.
      * @return Map<String, String> chứa tên trường và thông báo lỗi tương ứng.
@@ -42,7 +45,6 @@ public class VideoBean {
         if (poster == null || poster.isBlank()) {
             errors.put("errPoster", "Ảnh Poster không được để trống.");
         } else if (!poster.matches("^(http|https)://.*\\.(jpg|jpeg|png|gif)$")) {
-            // Kiểm tra định dạng nếu đã nhập
             errors.put("errPoster", "URL ảnh poster không đúng định dạng (chỉ chấp nhận jpg/jpeg/png/gif).");
         }
 
@@ -55,7 +57,6 @@ public class VideoBean {
         if (description == null || description.isBlank()) {
             errors.put("errDescription", "Mô tả không được để trống.");
         } else if (description.trim().length() > 1000) {
-            // Kiểm tra độ dài nếu đã nhập
             errors.put("errDescription", "Mô tả quá dài (tối đa 1000 ký tự).");
         }
 
