@@ -41,6 +41,7 @@ public class OpenApiJsonServlet extends HttpServlet {
             apiClasses.add(VideoApi.class);
             apiClasses.add(CategoryApi.class);
             apiClasses.add(VideoByCatApi.class);
+            apiClasses.add(VideoManagementApi.class);
             // THÊM CÁC API KHÁC CỦA BẠN VÀO ĐÂY:
             // apiClasses.add(UserApi.class); // Ví dụ cho một UserApi
             // apiClasses.add(CategoryApi.class); // Ví dụ cho một CategoryApi

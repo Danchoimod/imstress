@@ -259,7 +259,7 @@
         // Cập nhật trạng thái
         let statusDisplay = 'Đang cập nhật';
         if (movie.status === 1) {
-            statusDisplay = "Chờ duyệt";
+            statusDisplay = "Đang hoạt động";
         } else if (movie.status === 2) {
             statusDisplay = "Ẩn";
         } else if (movie.status === 3) {

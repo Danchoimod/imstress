@@ -223,11 +223,6 @@
             <div id="comments-list">
             </div>
 
-            <div class="load-more">
-                <button class="btn-load-more">
-                    <i class="bi bi-arrow-down me-2"></i>Tải thêm bình luận
-                </button>
-            </div>
         </div>
     </div>
 

@@ -80,7 +80,6 @@ public class UserManagementApi extends HttpServlet {
     )
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setCharacterEncoding("UTF-8");
-
         String userIdParam = req.getParameter("userId");
         String action = req.getParameter("action");
         String valueParam = req.getParameter("value");

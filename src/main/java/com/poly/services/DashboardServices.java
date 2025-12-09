@@ -26,14 +26,10 @@ public class DashboardServices {
             // 1. Lấy kết quả: Truy vấn chỉ trả về 1 hàng duy nhất
             Object[] result = (Object[]) query.getSingleResult();
 
-            // 2. Xử lý kết quả: Các giá trị COUNT được trả về dưới dạng Long hoặc BigInteger.
-            //    Chuyển đổi từng phần tử trong mảng kết quả thành Long và thêm vào List
             for (Object obj : result) {
-                // Kiểm tra nếu obj là Long hoặc BigInteger và chuyển đổi
                 if (obj instanceof Number) {
                     kpiValues.add(((Number) obj).longValue());
                 } else {
-                    // Xử lý trường hợp khác nếu cần, hoặc thêm 0 nếu không phải là số
                     kpiValues.add(0L);
                 }
             }

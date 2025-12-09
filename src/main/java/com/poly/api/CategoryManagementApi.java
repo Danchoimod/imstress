@@ -121,7 +121,7 @@ public class CategoryManagementApi extends HttpServlet {
                 return;
             }
 
-            Category category = new Category();
+                Category category = new Category();
             category.setName(bean.getCategoryname());
 
             String errorMsg;

@@ -183,7 +183,6 @@
                             <span class="movie-date">\${displayDate}</span>
                             <div class="movie-rating">
                                 <i class="bi bi-star-fill"></i>
-                                <span>\${displayRating}</span>
                             </div>
                         </div>
                     </div>

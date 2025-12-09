@@ -116,7 +116,7 @@ body {
         if (role === 3) return "<span class='badge bg-danger'>Admin</span>";
         if (role === 2) return "<span class='badge bg-primary'>Editer</span>";
         if (role === 1) return "<span class='badge bg-secondary'>User</span>";
-        if (role === 0) return "<span class='badge bg-info'>Guest</span>"; // Xử lý role 0
+        if (role === 0) return "<span class='badge bg-secondary'>User</span>"; // Xử lý role 0
         return "<span class='badge bg-warning'>Unknown</span>";
     }
 
@@ -130,34 +130,45 @@ body {
         const currentRole = user.role;
         const userId = user.id;
 
+        // Nếu là admin gốc, disable nút
+        const disabled = (userId === 1) ? "disabled" : "";
+
         if (currentRole === 3) {
-            // Đang là Admin -> Đề nghị chuyển về User (Role 1)
-            return "<button class='btn btn-sm btn-outline-danger ms-2' onclick='updateUser(" + userId + ", \"role\", 1, \"chuyển thành User\")' title='Chuyển thành User'>" +
-                        "<i class='fa-solid fa-arrow-down-long'></i> User" +
-                    "</button>";
+            // Đang là Admin -> chuyển về User
+            return "<button class='btn btn-sm btn-outline-danger ms-2' " + disabled +
+                   " onclick='updateUser(" + userId + ", \"role\", 1, \"chuyển thành User\")' title='Chuyển thành User'>" +
+                   "<i class='fa-solid fa-arrow-down-long'></i> User" +
+                   "</button>";
         } else {
-            // Đang là User/Editer/Guest -> Đề nghị chuyển thành Admin (Role 3)
-            return "<button class='btn btn-sm btn-outline-success ms-2' onclick='updateUser(" + userId + ", \"role\", 3, \"chuyển thành Admin\")' title='Chuyển thành Admin'>" +
-                        "<i class='fa-solid fa-arrow-up-long'></i> Admin" +
-                    "</button>";
+            // Đang là User/Editer/Guest -> chuyển thành Admin
+            return "<button class='btn btn-sm btn-outline-success ms-2' " + disabled +
+                   " onclick='updateUser(" + userId + ", \"role\", 3, \"chuyển thành Admin\")' title='Chuyển thành Admin'>" +
+                   "<i class='fa-solid fa-arrow-up-long'></i> Admin" +
+                   "</button>";
         }
     }
+
 
     // Tạo nút chuyển đổi Status (Active <-> Locked)
-    function generateStatusButton(user) {
-        const currentStatus = user.status;
-        const userId = user.id;
+   function generateStatusButton(user) {
+       const currentStatus = user.status;
+       const userId = user.id;
 
-        if (currentStatus === 1) { // Current: Active -> Offer Lock (Status 0)
-            return "<button class='btn btn-sm btn-danger' onclick='updateUser(" + userId + ", \"status\", 0, \"Ngừng hoạt động\")' title='Tắt kích hoạt'>" +
-                        "<i class='fa-solid fa-user-lock'></i>" +
-                    "</button>";
-        } else { // Current: Locked (Status 0) -> Offer Activate (Status 1)
-            return "<button class='btn btn-sm btn-success' onclick='updateUser(" + userId + ", \"status\", 1, \"Kích hoạt\")' title='Kích hoạt'>" +
-                        "<i class='fa-solid fa-user-check'></i>" +
-                    "</button>";
-        }
-    }
+       const disabled = (userId === 1) ? "disabled" : ""; // Admin gốc không được đổi status
+
+       if (currentStatus === 1) { // Active -> Offer Lock
+           return "<button class='btn btn-sm btn-danger' " + disabled +
+                  " onclick='updateUser(" + userId + ", \"status\", 0, \"Ngừng hoạt động\")' title='Tắt kích hoạt'>" +
+                  "<i class='fa-solid fa-user-lock'></i>" +
+                  "</button>";
+       } else { // Locked -> Activate
+           return "<button class='btn btn-sm btn-success' " + disabled +
+                  " onclick='updateUser(" + userId + ", \"status\", 1, \"Kích hoạt\")' title='Kích hoạt'>" +
+                  "<i class='fa-solid fa-user-check'></i>" +
+                  "</button>";
+       }
+   }
+
 
     // --- HÀM FETCH DỮ LIỆU ---
     function fetchUsers() {
