@@ -54,15 +54,10 @@ public class VideoServices {
 	public static String updateVideo(Video video, int userId, int catId) {
 		Category category = CategoryServices.getInfoById(catId);
 		if (category == null) {
-			return "Lỗi";
+			return "Lỗi: Danh mục không tồn tại";
 		}
 
-		Video videoCheck = getInfoByIdAndUserId(video.getId(), userId);
-		if (videoCheck == null) {
-			return "Lỗi";
-		}
-
-		User user = UserServices.getUserInfoById(userId);
+		// Không kiểm tra quyền sở hữu nữa - cho phép update bất kỳ video nào
 		EntityManagerFactory managerFactory = Persistence.createEntityManagerFactory("dbConnect");
 		EntityManager manager = managerFactory.createEntityManager();
 
@@ -70,18 +65,32 @@ public class VideoServices {
 			if (!manager.getTransaction().isActive()) {
 				manager.getTransaction().begin();
 			}
-			Video videoInsert = video;
 
-			videoInsert.setCategory(category);
-			videoInsert.setUser(user);
+			// Lấy video hiện có từ database
+			Video existingVideo = manager.find(Video.class, video.getId());
+			if (existingVideo == null) {
+				manager.close();
+				return "Lỗi: Không tìm thấy video";
+			}
 
-			manager.merge(videoInsert);
+			// Cập nhật các trường
+			existingVideo.setTitle(video.getTitle());
+			existingVideo.setDesc(video.getDesc());
+			existingVideo.setPoster(video.getPoster());
+			existingVideo.setUrl(video.getUrl());
+			existingVideo.setCategory(category);
+			existingVideo.setStatus(video.getStatus());
+			// Giữ nguyên: createAt, viewCount, user, favorites, comments
+
+			manager.merge(existingVideo);
 			manager.getTransaction().commit();
 		} catch (Exception e) {
 			e.printStackTrace();
-			manager.getTransaction().rollback();
+			if (manager.getTransaction().isActive()) {
+				manager.getTransaction().rollback();
+			}
 			manager.close();
-			return "Lỗi";
+			return "Lỗi: " + e.getMessage();
 		}
 		manager.close();
 		return null;
@@ -108,47 +117,46 @@ public class VideoServices {
 	}
 
 	public static String deleteVideo(int videoId, int userId) {
-
-//		Kiểm tra video có thuộc sở hữu không?
-
-		Video videoCheck = getInfoByIdAndUserId(videoId, userId);
-		if (videoCheck == null) {
-			return "Lỗi";
-		}
-
 		EntityManagerFactory managerFactory = Persistence.createEntityManagerFactory("dbConnect");
 		EntityManager manager = managerFactory.createEntityManager();
 		try {
+			// Lấy video từ database (không kiểm tra quyền sở hữu)
+			Video videoToDelete = manager.find(Video.class, videoId);
+			if (videoToDelete == null) {
+				manager.close();
+				return "Lỗi: Không tìm thấy video";
+			}
 
 			if (!manager.getTransaction().isActive()) {
 				manager.getTransaction().begin();
 			}
 
-			for (Favourites favourite : videoCheck.getFavorites()) {
-				manager.remove(favourite);
+			// Xóa tất cả favourites liên quan
+			if (videoToDelete.getFavorites() != null) {
+				for (Favourites favourite : videoToDelete.getFavorites()) {
+					manager.remove(favourite);
+				}
 			}
 
-//			for (Comment comment : videoCheck.getComments()) {
-//				for (Comment subComment : comment.getComments()) {
-//					manager.remove(subComment); // ?????
-//				}
-//				manager.remove(comment);
-//			}
-			deleteComment(videoCheck.getComments(), manager);
-			manager.remove(videoCheck);
+			// Xóa tất cả comments liên quan (đệ quy)
+			if (videoToDelete.getComments() != null) {
+				deleteComment(videoToDelete.getComments(), manager);
+			}
 
-//			Xoá yêu thích
-//			Xoá comment
-//			Xoá video
+			// Xóa video
+			manager.remove(videoToDelete);
 
 			manager.getTransaction().commit();
+			manager.close();
+			return null;
 		} catch (Exception e) {
-			// TODO: handle exception
 			e.printStackTrace();
-			manager.getTransaction().rollback();
+			if (manager.getTransaction().isActive()) {
+				manager.getTransaction().rollback();
+			}
+			manager.close();
+			return "Lỗi: " + e.getMessage();
 		}
-
-		return null;
 	}
 
 	private static void deleteComment(List<Comment> comments, EntityManager manager) {

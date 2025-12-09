@@ -44,8 +44,8 @@ public class VideoBean {
         // 3. KIỂM TRA POSTER (BẮT BUỘC theo yêu cầu)
         if (poster == null || poster.isBlank()) {
             errors.put("errPoster", "Ảnh Poster không được để trống.");
-        } else if (!poster.matches("^(http|https)://.*\\.(jpg|jpeg|png|gif)$")) {
-            errors.put("errPoster", "URL ảnh poster không đúng định dạng (chỉ chấp nhận jpg/jpeg/png/gif).");
+        } else if (!poster.matches("^(http|https)://.*$")) { // SỬA LỖI: Nới lỏng kiểm tra regex
+            errors.put("errPoster", "URL ảnh poster không đúng định dạng (phải bắt đầu bằng http:// hoặc https://).");
         }
 
         // 4. Kiểm tra Danh mục (Bắt buộc)

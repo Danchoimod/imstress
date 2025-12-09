@@ -12,7 +12,7 @@
 /* -------------------- LAYOUT & STYLES (Cần thiết cho giao diện Admin) -------------------- */
 :root {
     --sidebar-width: 240px;
-    --sidebar-bg: #2a3f54;
+    --sidebar-bg: #2a3f54; /* Màu nền sidebar */
     --active-color: #ffe082; /* Màu vàng RoPhim */
 }
 
@@ -74,69 +74,55 @@ body {
                 </div>
 
                 <div class="card-body">
-                    <form class="row g-3" method="POST" id="videoForm">
+                    <form class="row g-3" id="videoForm">
 
                         <%-- TRƯỜNG ẨN DÙNG ĐỂ NHẬN DIỆN ĐANG SỬA VIDEO NÀO --%>
-                        <input type="hidden" id="videoId" name="videoId" value="${param.id}">
+                        <input type="hidden" id="videoId" name="videoId" value="">
 
                         <div class="col-md-6">
                             <label for="title" class="form-label">Tiêu đề</label>
-                            <input type="text" class="form-control ${not empty bean.errors.errTitle ? 'is-invalid' : ''}"
+                            <input type="text" class="form-control"
                                    id="title" name="title"
-                                   value="${bean.title}"
                                    placeholder="Tiêu đề video">
-                            <c:if test="${not empty bean.errors.errTitle}">
-                                <div class="invalid-feedback">${bean.errors.errTitle}</div>
-                            </c:if>
+                            <div class="invalid-feedback" id="titleError"></div>
                         </div>
                         <div class="col-md-6">
                             <label for="url" class="form-label">URL Video</label>
-                            <input type="url" class="form-control ${not empty bean.errors.errUrl ? 'is-invalid' : ''}"
+                            <input type="url" class="form-control"
                                    id="url" name="url"
-                                   value="${bean.url}"
                                    placeholder="https://youtube.com/...">
-                            <c:if test="${not empty bean.errors.errUrl}">
-                                <div class="invalid-feedback">${bean.errors.errUrl}</div>
-                            </c:if>
+                            <div class="invalid-feedback" id="urlError"></div>
                         </div>
                         <div class="col-md-6">
                             <label for="poster" class="form-label">Ảnh Poster (Thumbnail)</label>
-                            <input type="text" class="form-control ${not empty bean.errors.errPoster ? 'is-invalid' : ''}"
+                            <input type="text" class="form-control"
                                    id="poster" name="poster"
-                                   value="${bean.poster}"
                                    placeholder="URL ảnh poster">
-                            <c:if test="${not empty bean.errors.errPoster}">
-                                <div class="invalid-feedback">${bean.errors.errPoster}</div>
-                            </c:if>
+                            <div class="invalid-feedback" id="posterError"></div>
                         </div>
                         <div class="col-md-6">
                             <label for="category" class="form-label">Danh mục</label>
                             <%-- Dữ liệu danh mục sẽ được load bằng JavaScript --%>
-                            <select id="category" name="category"
-                                    class="form-select ${not empty bean.errors.errCategory ? 'is-invalid' : ''}">
+                            <select id="category" name="category" class="form-select">
                                 <option value="">Chọn danh mục</option>
                             </select>
-                            <c:if test="${not empty bean.errors.errCategory}">
-                                <div class="invalid-feedback">${bean.errors.errCategory}</div>
-                            </c:if>
+                            <div class="invalid-feedback" id="categoryError"></div>
                         </div>
                         <div class="col-12">
                             <label for="description" class="form-label">Mô tả</label>
-                            <textarea class="form-control ${not empty bean.errors.errDescription ? 'is-invalid' : ''}"
+                            <textarea class="form-control"
                                       id="description" name="description" rows="3"
-                                      placeholder="Nhập mô tả chi tiết về video">${bean.description}</textarea>
-                            <c:if test="${not empty bean.errors.errDescription}">
-                                <div class="invalid-feedback">${bean.errors.errDescription}</div>
-                            </c:if>
+                                      placeholder="Nhập mô tả chi tiết về video"></textarea>
+                            <div class="invalid-feedback" id="descriptionError"></div>
                         </div>
 
                         <div class="col-12">
                             <button type="submit" class="btn btn-primary" id="saveBtn"
                                     style="background-color: var(--sidebar-bg); border-color: var(--sidebar-bg);">
-                                <i class="fa-solid fa-cloud-arrow-up me-2"></i> Lưu video
+                                <i class="fa-solid fa-cloud-arrow-up me-2"></i> <span id="formButtonText">Lưu video</span>
                             </button>
                             <button type="button" onclick="resetForm()" class="btn btn-outline-secondary ms-2">
-                               <i class="fa-solid fa-xmark me-2"></i> Hủy / Thêm mới
+                               <i class="fa-solid fa-xmark me-2"></i> Hủy
                             </button>
                         </div>
                     </form>
@@ -242,12 +228,6 @@ body {
             const category = categorySelect.value;
             const description = document.getElementById('description').value.trim();
 
-            // Basic client-side validation
-            if (!title || !url || !poster || !category || !description) {
-                showAlert('danger', 'Vui lòng điền đầy đủ tất cả các trường!');
-                return;
-            }
-
             try {
                 const params = new URLSearchParams();
                 params.append('title', title);
@@ -272,7 +252,7 @@ body {
                 if (response.data.status === 'success') {
                     showAlert('success', response.data.message);
                     resetForm();
-                    getData(); // Reload data
+                    getData();
                 } else {
                     showAlert('danger', response.data.message);
                 }
@@ -358,14 +338,16 @@ body {
         });
     }
 
+    // ==================== HÀM XÓA VIDEO ĐÃ ĐƯỢC SỬA CẤU TRÚC ====================
     async function deleteVideo(id) {
         if (confirm("Bạn có chắc chắn muốn xóa video này không?")) {
             try {
                 const params = new URLSearchParams();
                 params.append("videoId", id);
+                params.append("action", "delete"); // <-- THÊM THAM SỐ action MỚI
 
                 const response = await axios.post(
-                    contextPath + "/api/video-delete",
+                    contextPath + "/api/admin/videos", // <-- SỬA ENDPOINT CHUNG
                     params.toString(),
                     {
                         headers: {

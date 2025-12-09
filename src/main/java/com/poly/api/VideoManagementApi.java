@@ -9,7 +9,6 @@ import com.poly.services.CategoryServices;
 import com.poly.services.VideoServices;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import org.apache.commons.beanutils.BeanUtils;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -24,7 +23,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@WebServlet(urlPatterns = {"/api/admin/videos", "/api/video-delete"})
+// SỬA LỖI CẤU TRÚC: Chỉ định một endpoint duy nhất
+@WebServlet(urlPatterns = {"/api/admin/videos"})
 public class VideoManagementApi extends HttpServlet {
     private final Gson gson = new GsonBuilder().serializeNulls().create();
 
@@ -101,9 +101,12 @@ public class VideoManagementApi extends HttpServlet {
     )
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setCharacterEncoding("UTF-8");
-        String path = req.getServletPath();
+        // String path = req.getServletPath(); // KHÔNG DÙNG path nữa
 
-        if ("/api/video-delete".equals(path)) {
+        // SỬA LỖI CẤU TRÚC: Lấy tham số 'action'
+        String action = req.getParameter("action");
+
+        if ("delete".equalsIgnoreCase(action)) { // Kiểm tra action
             deleteVideo(req, resp);
         } else {
             addOrUpdateVideo(req, resp);
@@ -112,19 +115,6 @@ public class VideoManagementApi extends HttpServlet {
 
     private void addOrUpdateVideo(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
-            com.poly.beans.VideoBean bean = new com.poly.beans.VideoBean();
-            BeanUtils.populate(bean, req.getParameterMap());
-
-            // Validation
-            if (!bean.getErrors().isEmpty()) {
-                Map<String, Object> error = new HashMap<>();
-                error.put("status", "error");
-                error.put("message", "Lỗi validation");
-                error.put("errors", bean.getErrors());
-                sendJson(resp, HttpServletResponse.SC_BAD_REQUEST, error);
-                return;
-            }
-
             // Lấy userId từ session hoặc dùng user mặc định nếu chưa đăng nhập
             HttpSession session = req.getSession();
             User currentUser = (User) session.getAttribute("user");
@@ -135,8 +125,16 @@ public class VideoManagementApi extends HttpServlet {
                 userId = currentUser.getId();
             }
 
+            // Lấy tham số trực tiếp từ request - KHÔNG VALIDATION
+            String title = req.getParameter("title");
+            String url = req.getParameter("url");
+            String poster = req.getParameter("poster");
+            String categoryName = req.getParameter("category");
+            String description = req.getParameter("description");
+            String videoIdParam = req.getParameter("videoId");
+
             // Lấy category
-            Category category = CategoryServices.getCategoryByName(bean.getCategory());
+            Category category = CategoryServices.getCategoryByName(categoryName);
             if (category == null) {
                 Map<String, Object> result = new HashMap<>();
                 result.put("status", "error");
@@ -146,13 +144,12 @@ public class VideoManagementApi extends HttpServlet {
             }
 
             Video video = new Video();
-            video.setTitle(bean.getTitle());
-            video.setDesc(bean.getDescription());
-            video.setPoster(bean.getPoster());
-            video.setUrl(bean.getUrl());
+            video.setTitle(title);
+            video.setDesc(description);
+            video.setPoster(poster);
+            video.setUrl(url);
             video.setStatus(1); // Active
 
-            String videoIdParam = bean.getVideoId();
             String errorMsg;
 
             if (videoIdParam != null && !videoIdParam.isEmpty()) {
@@ -170,7 +167,7 @@ public class VideoManagementApi extends HttpServlet {
                 Map<String, Object> result = new HashMap<>();
                 result.put("status", "success");
                 result.put("message", (videoIdParam != null && !videoIdParam.isEmpty()) ?
-                    "Cập nhật video thành công!" : "Thêm video thành công!");
+                        "Cập nhật video thành công!" : "Thêm video thành công!");
                 sendJson(resp, HttpServletResponse.SC_OK, result);
             } else {
                 Map<String, Object> result = new HashMap<>();
@@ -188,6 +185,7 @@ public class VideoManagementApi extends HttpServlet {
     }
 
     private void deleteVideo(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        // NOTE: Logic xóa này vẫn giữ nguyên, nhưng nó được gọi bằng action=delete
         String videoIdParam = req.getParameter("videoId");
 
         if (videoIdParam == null || videoIdParam.isEmpty()) {
