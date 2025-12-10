@@ -40,7 +40,6 @@ public class FavApi extends HttpServlet {
     }
 
 
-    // GET: Lấy danh sách video yêu thích (hoặc kiểm tra trạng thái yêu thích)
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         Integer userId = getUserIdFromCookie(req);

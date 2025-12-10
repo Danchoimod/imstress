@@ -8,6 +8,9 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" crossorigin="anonymous" />
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+<script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
+
 <style>
 /* -------------------- LAYOUT & STYLES (Cần thiết cho giao diện Admin) -------------------- */
 :root {
@@ -93,13 +96,27 @@ body {
                                    placeholder="https://youtube.com/...">
                             <div class="invalid-feedback" id="urlError"></div>
                         </div>
+
+                        <%-- CẬP NHẬT: Tích hợp Cloudinary Upload Widget --%>
                         <div class="col-md-6">
                             <label for="poster" class="form-label">Ảnh Poster (Thumbnail)</label>
-                            <input type="text" class="form-control"
-                                   id="poster" name="poster"
-                                   placeholder="URL ảnh poster">
+                            <div class="input-group">
+                                <input type="text" class="form-control"
+                                       id="poster" name="poster" readonly
+                                       placeholder="URL ảnh poster sẽ xuất hiện ở đây">
+                                <button type="button" class="btn btn-outline-secondary" id="upload_widget">
+                                     <i class="fa-solid fa-cloud-arrow-up me-2"></i> Tải lên
+                                </button>
+                            </div>
                             <div class="invalid-feedback" id="posterError"></div>
+
+                            <%-- Hiển thị ảnh xem trước (tùy chọn) --%>
+                            <div class="mt-2" id="poster-preview-container">
+                                <img id="poster-preview" src="" alt="Poster Preview" style="max-width: 100%; max-height: 150px; display: none; border: 1px solid #ddd;">
+                            </div>
                         </div>
+                        <%-- HẾT CẬP NHẬT CLOUDINARY --%>
+
                         <div class="col-md-6">
                             <label for="category" class="form-label">Danh mục</label>
                             <%-- Dữ liệu danh mục sẽ được load bằng JavaScript --%>
@@ -174,12 +191,23 @@ body {
     const categorySelect = document.getElementById("category");
     const videoForm = document.getElementById("videoForm");
 
+    // -------------------- CÁC BIẾN VÀ ELEMENT CHO CLOUDINARY --------------------
+    const cloudinaryCloudName = "dhdke5ku8"; // ⚠️ THAY THẾ BẰNG CLOUD NAME CỦA BẠN!
+    const cloudinaryUploadPreset = "unsigned_upload"; // ⚠️ THAY THẾ BẰNG UNSIGNED UPLOAD PRESET CỦA BẠN!
+    const posterInput = document.getElementById('poster');
+    const uploadWidgetBtn = document.getElementById('upload_widget');
+    const posterPreview = document.getElementById('poster-preview');
+    // -------------------- KẾT THÚC CLOUDINARY VARIABLES --------------------
+
     document.addEventListener('DOMContentLoaded', function() {
         // Khởi tạo: Lấy danh mục trước, sau đó lấy dữ liệu video
         fetchCategories().then(getData);
 
         // Setup form submit handler
         setupFormSubmit();
+
+        // Setup Cloudinary Widget
+        setupCloudinaryWidget();
 
         // Nếu có lỗi validation từ Controller, hãy hiển thị lại form title
         if (videoIdInput.value) {
@@ -216,6 +244,49 @@ body {
         }
     }
 
+    // -------------------- SETUP CLOUDINARY WIDGET --------------------
+    function setupCloudinaryWidget() {
+        if (!cloudinaryCloudName || !cloudinaryUploadPreset || cloudinaryCloudName === 'YOUR_CLOUDINARY_CLOUD_NAME') {
+             console.error("LỖI CẤU HÌNH CLOUDINARY: Vui lòng cập nhật Cloud Name và Upload Preset.");
+             uploadWidgetBtn.disabled = true;
+             uploadWidgetBtn.textContent = 'Lỗi cấu hình Cloudinary';
+             return;
+        }
+
+        const myWidget = cloudinary.createUploadWidget(
+            {
+                cloudName: cloudinaryCloudName,
+                uploadPreset: cloudinaryUploadPreset,
+                // Cấu hình thêm (tùy chọn):
+                sources: [ 'local', 'url' ],
+                folder: 'video_posters',
+                clientAllowedFormats: ["png", "gif", "jpeg", "jpg"],
+                maxFileSize: 5000000 // Tối đa 5MB
+            },
+            (error, result) => {
+                if (!error && result && result.event === "success") {
+                    console.log('Done uploading! Here is the image info: ', result.info);
+
+                    // Gán URL ảnh vào trường Poster và hiển thị xem trước
+                    const imageUrl = result.info.secure_url;
+                    posterInput.value = imageUrl;
+                    posterPreview.src = imageUrl;
+                    posterPreview.style.display = 'block';
+
+                    showAlert('success', 'Tải ảnh lên Cloudinary thành công!');
+                } else if (error) {
+                    console.error("Cloudinary upload error:", error);
+                    showAlert('danger', 'Lỗi khi tải ảnh lên Cloudinary.');
+                }
+            }
+        );
+
+        // Gán sự kiện cho nút bấm
+        uploadWidgetBtn.addEventListener("click", function(){
+            myWidget.open();
+        }, false);
+    }
+
     // -------------------- SETUP FORM SUBMIT --------------------
     function setupFormSubmit() {
         videoForm.addEventListener('submit', async function(e) {
@@ -224,9 +295,15 @@ body {
             const videoId = videoIdInput.value;
             const title = document.getElementById('title').value.trim();
             const url = document.getElementById('url').value.trim();
-            const poster = document.getElementById('poster').value.trim();
+            const poster = posterInput.value.trim(); // Lấy giá trị từ trường poster
             const category = categorySelect.value;
             const description = document.getElementById('description').value.trim();
+
+            // RẤT QUAN TRỌNG: Kiểm tra xem poster đã được tải lên chưa
+            if (!poster) {
+                showAlert('danger', 'Vui lòng tải lên ảnh Poster (Thumbnail) trước khi lưu.');
+                return;
+            }
 
             try {
                 const params = new URLSearchParams();
@@ -311,8 +388,17 @@ body {
         videoIdInput.value = video.id;
         document.getElementById("title").value = video.title;
         document.getElementById("url").value = video.url;
-        document.getElementById("poster").value = video.poster;
+        posterInput.value = video.poster; // Điền URL poster đã có
         document.getElementById("description").value = video.desc;
+
+        // HIỂN THỊ ẢNH XEM TRƯỚC
+        if (video.poster) {
+            posterPreview.src = video.poster;
+            posterPreview.style.display = 'block';
+        } else {
+            posterPreview.src = '';
+            posterPreview.style.display = 'none';
+        }
 
         // 2. Chọn lại danh mục
         categorySelect.value = video.catName;
@@ -331,6 +417,10 @@ body {
         videoIdInput.value = "";
         formTitle.textContent = "Thêm Video Mới";
         saveBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up me-2"></i> Lưu video';
+
+        // Ẩn ảnh xem trước khi reset form
+        posterPreview.src = '';
+        posterPreview.style.display = 'none';
 
         // Xóa các class is-invalid
         document.querySelectorAll('.is-invalid').forEach(function(el) {
@@ -381,11 +471,20 @@ body {
             '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
 
         const container = document.querySelector('.container-fluid');
-        container.insertBefore(alertDiv, container.firstChild);
+        // Tìm div cha của form để chèn thông báo ngay sau main-header
+        const targetElement = document.querySelector('.main-header').nextElementSibling;
+        if (targetElement) {
+             targetElement.insertAdjacentElement('afterbegin', alertDiv);
+        } else {
+             container.insertBefore(alertDiv, container.firstChild);
+        }
 
         // Auto dismiss after 5 seconds
         setTimeout(function() {
-            alertDiv.remove();
+            // Kiểm tra xem alertDiv còn tồn tại trước khi xóa
+            if (alertDiv.parentElement) {
+                alertDiv.remove();
+            }
         }, 5000);
     }
 

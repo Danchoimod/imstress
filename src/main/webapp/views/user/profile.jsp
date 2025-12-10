@@ -113,30 +113,6 @@
                     border-color: #b8070f;
                 }
 
-                .avatar-container {
-                    text-align: center;
-                    margin-bottom: 2rem;
-                }
-
-                .avatar {
-                    width: 120px;
-                    height: 120px;
-                    border-radius: 50%;
-                    object-fit: cover;
-                    border: 3px solid var(--primary-color);
-                    margin-bottom: 1rem;
-                }
-
-                .avatar-upload {
-                    display: inline-block;
-                    background-color: var(--primary-color);
-                    color: white;
-                    padding: 8px 15px;
-                    border-radius: 20px;
-                    cursor: pointer;
-                    font-size: 0.9rem;
-                }
-
                 .user-id {
                     background-color: #333;
                     color: #aaa;
@@ -168,21 +144,7 @@
                     /* Xóa margin mặc định của p */
                 }
 
-                /* Style cho Modal */
-                .modal-content {
-                    background-color: var(--secondary-color);
-                    color: var(--light-color);
-                    border: none;
-                }
-
-                .modal-header,
-                .modal-footer {
-                    border-color: #444;
-                }
-
-                .btn-close {
-                    filter: invert(1);
-                }
+                /* Xóa style cho Modal vì đã xóa Modal */
             </style>
         </head>
 
@@ -217,17 +179,7 @@
                                 <p class="text-light mb-4">Cập nhật thông tin tài khoản</p>
 
                                 <form id="profileForm">
-                                    <div class="avatar-container">
-                                        <img src="https://cdn-icons-png.flaticon.com/512/9347/9347589.png"
-                                            class="avatar" alt="Avatar" id="currentAvatar">
-                                        <div class="avatar-upload" id="avatarUploadTrigger">
-                                            <i class="bi bi-camera me-1"></i> Đổi ảnh đại diện
-                                            <input type="file" id="avatarFileInput" name="avatarFile"
-                                                style="display: none;">
-                                        </div>
-                                        <input type="hidden" name="currentAvatarUrl"
-                                            value="https://cdn-icons-png.flaticon.com/512/9347/9347589.png">
-                                    </div>
+                                    <%-- XÓA: UI ĐỔI AVATAR --%>
 
                                     <div class="mb-4">
                                         <label class="form-label">Email</label>
@@ -260,14 +212,7 @@
 
                                     <div class="divider"></div>
 
-                                    <div class="update-section" data-bs-toggle="modal"
-                                        data-bs-target="#changePasswordModal">
-                                        <div class="update-icon">
-                                            <i class="bi bi-shield-lock"></i>
-                                        </div>
-                                        <h5>Đặt mật khẩu</h5>
-                                        <p class="text-muted">Nhấn vào đây để thay đổi mật khẩu tài khoản</p>
-                                    </div>
+                                    <%-- XÓA: UI ĐỔI MẬT KHẨU --%>
 
                                     <div class="d-flex justify-content-end mt-4">
                                         <button type="reset" class="btn btn-outline-light me-2">Hủy</button>
@@ -279,43 +224,7 @@
                     </div>
                 </div>
 
-                <div class="modal fade" id="changePasswordModal" tabindex="-1"
-                    aria-labelledby="changePasswordModalLabel" aria-hidden="true">
-                    <div class="modal-dialog modal-sm">
-                        <div class="modal-content">
-                            <form method="POST" action="${pageContext.request.contextPath}/profile/change-password">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="changePasswordModalLabel">Thay đổi mật khẩu</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                        aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <div class="mb-3">
-                                        <label for="currentPassword" class="form-label">Mật khẩu hiện tại</label>
-                                        <input type="password" class="form-control" id="currentPassword"
-                                            name="currentPassword" required>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="newPassword" class="form-label">Mật khẩu mới</label>
-                                        <input type="password" class="form-control" id="newPassword" name="newPassword"
-                                            required>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="confirmNewPassword" class="form-label">Xác nhận
-                                            mật khẩu mới</label>
-                                        <input type="password" class="form-control" id="confirmNewPassword"
-                                            name="confirmNewPassword" required>
-                                    </div>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-outline-light"
-                                        data-bs-dismiss="modal">Hủy</button>
-                                    <button type="submit" class="btn btn-primary">Xác nhận</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
+                <%-- XÓA: MODAL ĐỔI MẬT KHẨU --%>
 
                 <script
                     src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
@@ -323,19 +232,7 @@
                     const USER_API_URL = "${pageContext.request.contextPath}/api/userinfo";
                     const PROFILE_UPDATE_API_URL = "${pageContext.request.contextPath}/api/profile/update";
 
-                    document.getElementById('avatarUploadTrigger').addEventListener('click', function () {
-                        document.getElementById('avatarFileInput').click();
-                    });
-                    document.getElementById('avatarFileInput').addEventListener('change', function (event) {
-                        const file = event.target.files[0];
-                        if (file) {
-                            const reader = new FileReader();
-                            reader.onload = function (e) {
-                                document.getElementById('currentAvatar').src = e.target.result;
-                            };
-                            reader.readAsDataURL(file);
-                        }
-                    });
+                    // XÓA: Logic liên quan đến đổi avatar (avatarUploadTrigger, avatarFileInput, v.v.)
 
                     // Hàm tải thông tin người dùng hiện tại
                     async function init() {
@@ -345,6 +242,7 @@
                         const displayNameInput = document.getElementById("displayName");
                         const phoneInput = document.getElementById("phone");
                         const fullNameInput = document.getElementById("fullname");
+                        // const currentAvatar = document.getElementById('currentAvatar'); // XÓA: Không cần avatar nữa
 
                         try {
                             const response = await fetch(USER_API_URL);
@@ -382,11 +280,13 @@
                                 phoneInput.value = user.phone;
                             }
 
-                            // Cập nhật Ảnh đại diện (nếu API trả về URL ảnh)
+                            // XÓA: Logic cập nhật Ảnh đại diện
+                            /*
                             if (user.avatarUrl) {
-                                document.getElementById('currentAvatar').src = user.avatarUrl;
+                                currentAvatar.src = user.avatarUrl;
                                 document.querySelector('input[name="currentAvatarUrl"]').value = user.avatarUrl;
                             }
+                            */
 
 
                         } catch (error) {

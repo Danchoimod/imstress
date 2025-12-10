@@ -188,9 +188,7 @@ body {
                         '<i class="fa-solid fa-pen-to-square"></i>' +
                     '</button>' +
                     toggleButton + ' ' +
-                    '<button class="btn btn-sm btn-danger ms-1" onclick="deleteCategory(' + cat.id + ')" title="Xóa danh mục">' +
-                        '<i class="fa-solid fa-trash"></i>' +
-                    '</button>' +
+
                 '</td>' +
             '</tr>';
         }).join('');
