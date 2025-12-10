@@ -7,7 +7,11 @@
     <title>Chi tiết phim - RoPhim</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
     <style>
+        /* ... (Phần CSS giữ nguyên) ... */
         :root {
             --primary-color: #e50914;
             --dark-color: #141414;
@@ -180,29 +184,19 @@
     <script>
         const VIDEO_DETAIL_API_URL = "${pageContext.request.contextPath}/api/videos";
         const FAV_API_URL = "${pageContext.request.contextPath}/api/fav";
+        const USER_INFO_API_URL = "${pageContext.request.contextPath}/api/userinfo"; // API lấy thông tin người dùng
 
-        // Hàm lấy tham số từ URL
         function getQueryParam(param) {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get(param);
         }
 
-        // Hàm lấy giá trị cookie
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-            return null;
-        }
-
-        // Hàm cập nhật trạng thái nút Yêu thích
         function updateFavoriteButton(isFavorited) {
             const btn = document.getElementById('btn-favorite');
             const icon = document.getElementById('favorite-icon');
             const text = document.getElementById('favorite-text');
 
             if (!btn || !icon) return;
-
             if (isFavorited) {
                 btn.classList.remove('btn-outline-light');
                 btn.classList.add('btn-primary');
@@ -218,7 +212,7 @@
             }
         }
 
-        // HÀM XỬ LÝ TOGGLE FAVORITE
+        // HÀM XỬ LÝ TOGGLE FAVORITE DÙNG AXIOS
         async function toggleFavorite(videoId) {
             const favoriteBtn = document.getElementById('btn-favorite');
             favoriteBtn.disabled = true;
@@ -227,81 +221,99 @@
             params.append("videoId", videoId);
 
             try {
-                const response = await fetch(FAV_API_URL, {
-                    method: 'POST',
+                // SỬ DỤNG AXIOS.POST
+                const response = await axios.post(FAV_API_URL, params.toString(), {
                     headers: {
                         "Content-Type": "application/x-www-form-urlencoded"
-                    },
-                    body: params.toString()
+                    }
                 });
 
-                const result = await response.json();
+                const result = response.data; // Axios tự động parse JSON
 
-                if (response.ok) {
-                    alert(result.message);
-                    // Cập nhật trạng thái nút
-                    updateFavoriteButton(result.action === 'favorited');
-                } else if (response.status === 401) {
-                    alert(result.error);
-                    window.location.href = '${pageContext.request.contextPath}/auth/login';
-                } else {
-                    alert(result.error || result.message || "Cập nhật yêu thích thất bại.");
-                }
+                alert(result.message);
+                updateFavoriteButton(result.action === 'favorited');
 
             } catch (error) {
                 console.error("Lỗi toggle favorite:", error);
-                alert("Lỗi kết nối hoặc xử lý server.");
+
+                if (error.response && error.response.status === 401) {
+                    alert('Vui lòng đăng nhập để sử dụng chức năng yêu thích.');
+                    window.location.href = '${pageContext.request.contextPath}/auth/login';
+                } else if (error.response && error.response.data) {
+                    // Nếu có lỗi trả về từ server dưới dạng JSON (vd: error.response.data.error)
+                    alert(error.response.data.error || error.response.data.message || "Cập nhật yêu thích thất bại.");
+                } else {
+                    alert("Lỗi kết nối hoặc xử lý server. Vui lòng kiểm tra console.");
+                }
             } finally {
                 favoriteBtn.disabled = false;
             }
         }
 
-        // Hàm fetch chi tiết phim
+        // Hàm fetch chi tiết phim DÙNG AXIOS
         async function fetchVideoDetail() {
             const videoId = getQueryParam('id');
             const spinner = document.getElementById('loading-spinner');
             const content = document.getElementById('main-content');
             const favoriteBtn = document.getElementById('btn-favorite');
 
-            // Kiểm tra nếu không có ID
             if (!videoId) {
                 alert("Không tìm thấy ID phim! Quay lại trang chủ.");
+                spinner.style.display = 'none';
                 return;
             }
 
-            try {
-                const response = await fetch(VIDEO_DETAIL_API_URL);
-                if (!response.ok) {
-                    throw new Error(`Lỗi kết nối API: ${response.status}`);
-                }
+            let movie = null;
 
-                // Lấy danh sách phim và tìm phim có id trùng khớp
-                const videos = await response.json();
-                const movie = videos.find(v => v.id == videoId);
+            try {
+                // 1. LẤY CHI TIẾT VIDEO
+                const videoResponse = await axios.get(VIDEO_DETAIL_API_URL);
+                const videos = videoResponse.data;
+                movie = videos.find(v => v.id == videoId);
+
                 if (!movie) {
                     throw new Error("Không tìm thấy phim này trong cơ sở dữ liệu.");
                 }
 
                 updateUI(movie);
 
-                // CHECK FAVORITE STATUS AND ATTACH LISTENER
-                const userId = getCookie('user_id');
-                console.log(userId);
-                if (userId) {
-                    // Nếu người dùng đã đăng nhập, kiểm tra trạng thái yêu thích
-                    const favResponse = await fetch(`${FAV_API_URL}?videoId=${videoId}`);
-                    if (favResponse.ok) {
-                        const favStatus = await favResponse.json();
+                // 2. LẤY THÔNG TIN USER ĐỂ CHECK LOGIN
+                let userId = null;
+                let isLoggedIn = false;
+                try {
+                    const userInfoResponse = await axios.get(USER_INFO_API_URL);
+                    const userData = userInfoResponse.data;
+                    // Giả sử API trả về đối tượng người dùng có trường 'id' nếu đã đăng nhập
+                    if (userData && userData.id) {
+                        userId = userData.id;
+                        isLoggedIn = true;
+                    }
+                } catch (e) {
+                    // Bất kỳ lỗi nào ở đây (vd: 401, 500) đều được coi là chưa đăng nhập
+                    isLoggedIn = false;
+                    console.warn("User not logged in or API error:", e.response ? e.response.status : e.message);
+                }
+
+                console.log("User ID from API:", userId);
+
+                if (isLoggedIn) {
+                    // 3. CHECK TRẠNG THÁI FAVORITE
+                    try {
+                        const favResponse = await axios.get(`${FAV_API_URL}?videoId=${videoId}`);
+                        const favStatus = favResponse.data;
                         updateFavoriteButton(favStatus.isFavorited);
+                    } catch (e) {
+                        // Nếu API check fav lỗi, giả sử chưa thích
+                        updateFavoriteButton(false);
+                        console.warn("Lỗi khi check trạng thái yêu thích:", e.response ? e.response.status : e.message);
                     }
 
                     // Gán sự kiện cho nút Favorite
                     favoriteBtn.addEventListener('click', () => toggleFavorite(videoId));
                 } else {
-                    // Nếu chưa đăng nhập, click sẽ chuyển hướng hoặc báo lỗi.
                     updateFavoriteButton(false);
                     favoriteBtn.addEventListener('click', () => {
-                            alert('Vui lòng đăng nhập để sử dụng chức năng yêu thích.');
+                        alert('Vui lòng đăng nhập để sử dụng chức năng yêu thích.');
                         window.location.href = '${pageContext.request.contextPath}/auth/login';
                     });
                 }
@@ -312,13 +324,21 @@
 
             } catch (error) {
                 console.error("Error fetching detail:", error);
-                spinner.innerHTML = `<p class="text-danger text-center">Lỗi: ${error.message}</p>`;
+                let errorMessage = "Không thể tải thông tin chi tiết phim.";
+
+                if (error.response && error.response.status) {
+                    errorMessage += ` Lỗi HTTP: ${error.response.status}`;
+                } else if (error.message) {
+                    // Lỗi từ fetch (ví dụ: không tìm thấy phim)
+                    errorMessage = `Lỗi: ${error.message}`;
+                }
+
+                spinner.innerHTML = `<p class="text-danger text-center">Lỗi: ${errorMessage}</p>`;
             }
         }
 
         // Hàm cập nhật UI
         function updateUI(movie) {
-            // Cập nhật tiêu đề trang
             document.title = movie.title + " - RoPhim";
             const posterImg = document.getElementById('movie-poster');
             posterImg.src = movie.poster || 'https://via.placeholder.com/300x450/333/666?text=No+Image';
@@ -326,12 +346,10 @@
 
             document.getElementById('movie-title').textContent = movie.title;
             document.getElementById('movie-subtitle').textContent = movie.title;
-
             document.getElementById('movie-description').textContent = movie.desc || "Chưa có mô tả cho nội dung này.";
 
             document.getElementById('movie-date').textContent = movie.createAt || 'N/A';
 
-            // Cập nhật trạng thái
             let statusDisplay = 'Đang cập nhật';
             if (movie.status === 1) {
                 statusDisplay = "Đang hoạt động";
@@ -344,7 +362,6 @@
             }
             document.getElementById('movie-status').textContent = statusDisplay;
 
-            // Cập nhật nút Xem ngay
             const watchBtn = document.getElementById('btn-watch');
             watchBtn.href = 'watch?id=' + movie.id;
         }
@@ -352,7 +369,6 @@
         // Khởi chạy khi trang load
         document.addEventListener('DOMContentLoaded', fetchVideoDetail);
 
-        // Giữ lại xử lý sự kiện cho các nút hành động phụ (trừ nút favorite đã được gán)
         document.querySelectorAll('.btn-outline-light:not(#btn-favorite)').forEach(button => {
             button.addEventListener('click', function() {
                 const buttonText = this.textContent.trim();
