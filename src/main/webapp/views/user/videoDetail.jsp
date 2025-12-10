@@ -153,8 +153,8 @@
                         <a id="btn-watch" href="#" class="btn btn-primary">
                             <i class="bi bi-play-fill me-2"></i>Xem ngay
                         </a>
-                        <button class="btn btn-outline-light">
-                            <i class="bi bi-heart me-2"></i>Yêu thích
+                        <button id="btn-favorite" class="btn btn-outline-light">
+                            <i class="bi bi-heart me-2" id="favorite-icon"></i><span id="favorite-text">Yêu thích</span>
                         </button>
                         <button class="btn btn-outline-light">
                             <i class="bi bi-share me-2"></i>Chia sẻ
@@ -177,113 +177,188 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    // 🚨 KHẮC PHỤC LỖI: Sử dụng tên biến độc lập và định nghĩa lại URL API
-    // Biến contextPath đã được Header.jsp định nghĩa, không cần khai báo lại.
-    // Đã sửa lỗi chính tả: /api/vieos -> /api/videos
-    const VIDEO_DETAIL_API_URL = "${pageContext.request.contextPath}/api/videos";
+    <script>
+        const VIDEO_DETAIL_API_URL = "${pageContext.request.contextPath}/api/videos";
+        const FAV_API_URL = "${pageContext.request.contextPath}/api/fav";
 
-    // Hàm lấy tham số từ URL
-    function getQueryParam(param) {
-        const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get(param);
-    }
-
-    // Hàm fetch chi tiết phim (ĐÃ SỬA LOGIC)
-    async function fetchVideoDetail() {
-        const videoId = getQueryParam('id');
-        const spinner = document.getElementById('loading-spinner');
-        const content = document.getElementById('main-content');
-
-        // Kiểm tra nếu không có ID
-        if (!videoId) {
-            alert("Không tìm thấy ID phim! Quay lại trang chủ.");
-            // window.location.href = 'index.jsp'; // Bỏ comment nếu muốn tự động quay về
-            return;
+        // Hàm lấy tham số từ URL
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
         }
 
-        try {
-            console.log(`Đang tìm phim có ID: ${videoId}`);
+        // Hàm lấy giá trị cookie
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return null;
+        }
 
-            // 🚨 CẬP NHẬT: Gọi API đã sửa URL
-            const response = await fetch(VIDEO_DETAIL_API_URL);
+        // Hàm cập nhật trạng thái nút Yêu thích
+        function updateFavoriteButton(isFavorited) {
+            const btn = document.getElementById('btn-favorite');
+            const icon = document.getElementById('favorite-icon');
+            const text = document.getElementById('favorite-text');
 
-            if (!response.ok) {
-                throw new Error(`Lỗi kết nối API: ${response.status}`);
+            if (!btn || !icon) return;
+
+            if (isFavorited) {
+                btn.classList.remove('btn-outline-light');
+                btn.classList.add('btn-primary');
+                icon.classList.remove('bi-heart');
+                icon.classList.add('bi-heart-fill');
+                text.textContent = 'Đã thích';
+            } else {
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-outline-light');
+                icon.classList.remove('bi-heart-fill');
+                icon.classList.add('bi-heart');
+                text.textContent = 'Yêu thích';
+            }
+        }
+
+        // HÀM XỬ LÝ TOGGLE FAVORITE
+        async function toggleFavorite(videoId) {
+            const favoriteBtn = document.getElementById('btn-favorite');
+            favoriteBtn.disabled = true;
+
+            const params = new URLSearchParams();
+            params.append("videoId", videoId);
+
+            try {
+                const response = await fetch(FAV_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    },
+                    body: params.toString()
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(result.message);
+                    // Cập nhật trạng thái nút
+                    updateFavoriteButton(result.action === 'favorited');
+                } else if (response.status === 401) {
+                    alert(result.error);
+                    window.location.href = '${pageContext.request.contextPath}/auth/login';
+                } else {
+                    alert(result.error || result.message || "Cập nhật yêu thích thất bại.");
+                }
+
+            } catch (error) {
+                console.error("Lỗi toggle favorite:", error);
+                alert("Lỗi kết nối hoặc xử lý server.");
+            } finally {
+                favoriteBtn.disabled = false;
+            }
+        }
+
+        // Hàm fetch chi tiết phim
+        async function fetchVideoDetail() {
+            const videoId = getQueryParam('id');
+            const spinner = document.getElementById('loading-spinner');
+            const content = document.getElementById('main-content');
+            const favoriteBtn = document.getElementById('btn-favorite');
+
+            // Kiểm tra nếu không có ID
+            if (!videoId) {
+                alert("Không tìm thấy ID phim! Quay lại trang chủ.");
+                return;
             }
 
-            // Lấy danh sách phim về
-            const videos = await response.json();
+            try {
+                const response = await fetch(VIDEO_DETAIL_API_URL);
+                if (!response.ok) {
+                    throw new Error(`Lỗi kết nối API: ${response.status}`);
+                }
 
-            // Dùng hàm find của Javascript để lọc ra phim có id trùng khớp
-            // Lưu ý: videoId từ URL là string, v.id có thể là number, nên dùng == thay vì ===
-            const movie = videos.find(v => v.id == videoId);
+                // Lấy danh sách phim và tìm phim có id trùng khớp
+                const videos = await response.json();
+                const movie = videos.find(v => v.id == videoId);
+                if (!movie) {
+                    throw new Error("Không tìm thấy phim này trong cơ sở dữ liệu.");
+                }
 
-            if (!movie) {
-                throw new Error("Không tìm thấy phim này trong cơ sở dữ liệu.");
+                updateUI(movie);
+
+                // CHECK FAVORITE STATUS AND ATTACH LISTENER
+                const userId = getCookie('user_id');
+                console.log(userId);
+                if (userId) {
+                    // Nếu người dùng đã đăng nhập, kiểm tra trạng thái yêu thích
+                    const favResponse = await fetch(`${FAV_API_URL}?videoId=${videoId}`);
+                    if (favResponse.ok) {
+                        const favStatus = await favResponse.json();
+                        updateFavoriteButton(favStatus.isFavorited);
+                    }
+
+                    // Gán sự kiện cho nút Favorite
+                    favoriteBtn.addEventListener('click', () => toggleFavorite(videoId));
+                } else {
+                    // Nếu chưa đăng nhập, click sẽ chuyển hướng hoặc báo lỗi.
+                    updateFavoriteButton(false);
+                    favoriteBtn.addEventListener('click', () => {
+                            alert('Vui lòng đăng nhập để sử dụng chức năng yêu thích.');
+                        window.location.href = '${pageContext.request.contextPath}/auth/login';
+                    });
+                }
+
+                // Ẩn spinner, hiện nội dung
+                spinner.style.display = 'none';
+                content.style.display = 'block';
+
+            } catch (error) {
+                console.error("Error fetching detail:", error);
+                spinner.innerHTML = `<p class="text-danger text-center">Lỗi: ${error.message}</p>`;
             }
-
-            console.log('Thông tin phim tìm được:', movie);
-
-            // Cập nhật giao diện
-            updateUI(movie);
-
-            // Ẩn spinner, hiện nội dung
-            spinner.style.display = 'none';
-            content.style.display = 'block';
-
-        } catch (error) {
-            console.error("Error fetching detail:", error);
-            spinner.innerHTML = `<p class="text-danger text-center">Lỗi: ${error.message}</p>`;
         }
-    }
 
-    // Hàm cập nhật UI
-    function updateUI(movie) {
-        // Cập nhật tiêu đề trang
-        document.title = movie.title + " - RoPhim";
+        // Hàm cập nhật UI
+        function updateUI(movie) {
+            // Cập nhật tiêu đề trang
+            document.title = movie.title + " - RoPhim";
+            const posterImg = document.getElementById('movie-poster');
+            posterImg.src = movie.poster || 'https://via.placeholder.com/300x450/333/666?text=No+Image';
+            posterImg.alt = movie.title;
 
-        const posterImg = document.getElementById('movie-poster');
-        posterImg.src = movie.poster || 'https://via.placeholder.com/300x450/333/666?text=No+Image';
-        posterImg.alt = movie.title;
+            document.getElementById('movie-title').textContent = movie.title;
+            document.getElementById('movie-subtitle').textContent = movie.title;
 
-        document.getElementById('movie-title').textContent = movie.title;
-        document.getElementById('movie-subtitle').textContent = movie.title;
+            document.getElementById('movie-description').textContent = movie.desc || "Chưa có mô tả cho nội dung này.";
 
-        // Kiểm tra mô tả và thay thế description
-        document.getElementById('movie-description').textContent = movie.desc || "Chưa có mô tả cho nội dung này."; // Sử dụng movie.desc (từ Entity Video.java)
+            document.getElementById('movie-date').textContent = movie.createAt || 'N/A';
 
-        document.getElementById('movie-date').textContent = movie.createAt || 'N/A';
+            // Cập nhật trạng thái
+            let statusDisplay = 'Đang cập nhật';
+            if (movie.status === 1) {
+                statusDisplay = "Đang hoạt động";
+            } else if (movie.status === 2) {
+                statusDisplay = "Ẩn";
+            } else if (movie.status === 3) {
+                statusDisplay = "Từ chối";
+            } else if (movie.status === 4) {
+                statusDisplay = "Đã duyệt";
+            }
+            document.getElementById('movie-status').textContent = statusDisplay;
 
-        // Cập nhật trạng thái
-        let statusDisplay = 'Đang cập nhật';
-        if (movie.status === 1) {
-            statusDisplay = "Đang hoạt động";
-        } else if (movie.status === 2) {
-            statusDisplay = "Ẩn";
-        } else if (movie.status === 3) {
-            statusDisplay = "Từ chối";
-        } else if (movie.status === 4) {
-            statusDisplay = "Đã duyệt";
+            // Cập nhật nút Xem ngay
+            const watchBtn = document.getElementById('btn-watch');
+            watchBtn.href = 'watch?id=' + movie.id;
         }
-        document.getElementById('movie-status').textContent = statusDisplay;
 
-        // Cập nhật nút Xem ngay
-        const watchBtn = document.getElementById('btn-watch');
-        watchBtn.href = 'watch?id=' + movie.id;
-    }
+        // Khởi chạy khi trang load
+        document.addEventListener('DOMContentLoaded', fetchVideoDetail);
 
-    // Khởi chạy khi trang load
-    document.addEventListener('DOMContentLoaded', fetchVideoDetail);
-
-    // Giữ lại xử lý sự kiện cho các nút hành động phụ
-    document.querySelectorAll('.btn-outline-light').forEach(button => {
-        button.addEventListener('click', function() {
-            const buttonText = this.textContent.trim();
-            alert(`Chức năng ${buttonText} đang phát triển!`);
+        // Giữ lại xử lý sự kiện cho các nút hành động phụ (trừ nút favorite đã được gán)
+        document.querySelectorAll('.btn-outline-light:not(#btn-favorite)').forEach(button => {
+            button.addEventListener('click', function() {
+                const buttonText = this.textContent.trim();
+                alert(`Chức năng ${buttonText} đang phát triển!`);
+            });
         });
-    });
-</script>
+    </script>
 </body>
 </html>

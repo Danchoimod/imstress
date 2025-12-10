@@ -38,7 +38,7 @@ public class UserServices {
                 //trả về boolean
                 if (!manager.getTransaction().isActive()){// bắt buộc khi thực thi
                     manager.getTransaction().begin(); // bắt đầu thực thi
-                        manager.persist(user);
+                    manager.persist(user);
                     manager.getTransaction().commit();
                 }
             }
@@ -53,11 +53,11 @@ public class UserServices {
         EntityManager manager = JPAUtils.getEntityManager();
         try {
             String sql = "SELECT * FROM users WHERE username=?1 OR email=?2";
-        Query query = manager.createNativeQuery(sql,User.class);
-        query.setParameter(1,usernameOrEmail);
-        query.setParameter(2,usernameOrEmail);
+            Query query = manager.createNativeQuery(sql,User.class);
+            query.setParameter(1,usernameOrEmail);
+            query.setParameter(2,usernameOrEmail);
 
-        User user = (User) query.getSingleResult(); //ép kiểu trả về 1 object duy nhất
+            User user = (User) query.getSingleResult(); //ép kiểu trả về 1 object duy nhất
             /*Vì getSingleResult() chỉ trả về kiểu Object */
 
             if (password.equals(user.getPassword())){
@@ -155,4 +155,40 @@ public class UserServices {
             }
         }
     }
+
+    // START NEW FEATURE: UPDATE USER PROFILE
+    public static boolean updateUserProfile(User updatedUser) {
+        EntityManager manager = JPAUtils.getEntityManager();
+        EntityTransaction transaction = manager.getTransaction();
+        try {
+            User existingUser = manager.find(User.class, updatedUser.getId());
+            if (existingUser == null) return false;
+
+            // TODO: Bổ sung kiểm tra trùng lặp Email/Phone trước khi merge
+
+            if (!transaction.isActive()) {
+                transaction.begin();
+            }
+
+            // Cập nhật các trường cho phép sửa: Name, Phone, Email
+            existingUser.setName(updatedUser.getName());
+            existingUser.setPhone(updatedUser.getPhone());
+            existingUser.setEmail(updatedUser.getEmail());
+
+            manager.merge(existingUser); // Lưu cập nhật
+            transaction.commit();
+            return true;
+        } catch (Exception e) {
+            if (transaction != null && transaction.isActive()) {
+                transaction.rollback();
+            }
+            e.printStackTrace();
+            return false;
+        } finally {
+            if (manager != null) {
+                manager.close();
+            }
+        }
+    }
+    // END NEW FEATURE: UPDATE USER PROFILE
 }

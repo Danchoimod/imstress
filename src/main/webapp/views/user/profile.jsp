@@ -154,8 +154,6 @@
                     margin: 2rem 0;
                 }
 
-                /* Đã xóa style cho .gender-option */
-
                 .email-display {
                     background-color: #333;
                     padding: 10px 15px;
@@ -164,39 +162,10 @@
                 }
 
                 .email-display p {
-                    /* Sửa p thành a nếu muốn email là link mailto */
                     color: var(--light-color);
                     text-decoration: none;
                     margin: 0;
                     /* Xóa margin mặc định của p */
-                }
-
-                /* Nếu bạn muốn email là link mailto, hãy sử dụng lại .email-display a và thay thẻ p thành a */
-                /* .email-display a {
-            color: var(--primary-color); 
-            text-decoration: none;
-        } */
-
-
-                .update-section {
-                    text-align: center;
-                    margin-top: 2rem;
-                    padding: 2rem;
-                    border: 2px dashed #555;
-                    border-radius: 10px;
-                    cursor: pointer;
-                    transition: all 0.3s;
-                }
-
-                .update-section:hover {
-                    border-color: var(--primary-color);
-                    background-color: rgba(229, 9, 20, 0.05);
-                }
-
-                .update-icon {
-                    font-size: 2rem;
-                    color: var(--primary-color);
-                    margin-bottom: 1rem;
                 }
 
                 /* Style cho Modal */
@@ -219,7 +188,8 @@
 
         <body>
             <%@ include file="../component/common/Header.jsp" %>
-                <div style="padding-top: 80px;" class="profile-container">
+                <div style="padding-top: 80px;"
+                    class="profile-container">
                     <div class="row">
                         <div class="col-lg-3 mb-4">
                             <div class="profile-sidebar">
@@ -246,8 +216,7 @@
                                 <h3 class="section-title">Tài khoản</h3>
                                 <p class="text-light mb-4">Cập nhật thông tin tài khoản</p>
 
-                                <form method="POST">
-
+                                <form id="profileForm">
                                     <div class="avatar-container">
                                         <img src="https://cdn-icons-png.flaticon.com/512/9347/9347589.png"
                                             class="avatar" alt="Avatar" id="currentAvatar">
@@ -264,57 +233,46 @@
                                         <label class="form-label">Email</label>
                                         <div class="email-display">
                                             <p id="emailDisplay">loading...</p>
-                                            <input type="hidden" name="email" id="emailInput">
-                                        </div>
+                                            </div>
                                     </div>
 
                                     <div class="mb-4">
-                                        <label for="displayName" class="form-label">Tên hiển thị</label>
+                                        <label for="displayName" class="form-label">Tên hiển thị (Username)</label>
                                         <div class="user-id">ID:
                                             <span id="userIdSpan">0000</span>
                                             <input type="hidden" name="userId" id="userIdInput" value="0000">
                                         </div>
                                         <input type="text" class="form-control" id="displayName" name="displayName"
-                                            value="${bean.displayName}">
-                                        <c:if test="${not empty bean.errors.errDisplayName}">
-                                            <small class="text-danger">${bean.errors.errDisplayName}</small>
-                                        </c:if>
+                                            value="" readonly title="Tên hiển thị (Username) không thể thay đổi">
+                                        <small class="text-muted">Username được dùng cho bình luận và đăng nhập, không thể thay đổi.</small>
                                     </div>
                                     <div class="mb-4">
-                                        <label for="displayName" class="form-label">Họ và tên </label>
+                                        <label for="fullname" class="form-label">Họ và tên </label>
                                         <input type="text" class="form-control" id="fullname" name="fullname"
-                                            value="${bean.displayName}">
-                                        <c:if test="${not empty bean.errors.errDisplayName}">
-                                            <small class="text-danger">${bean.errors.errDisplayName}</small>
-                                        </c:if>
+                                            value="">
                                     </div>
 
                                     <div class="mb-4">
                                         <label for="phone" class="form-label">Số điện thoại</label>
                                         <input type="tel" class="form-control" id="phone" name="phone"
-                                            value="${bean.phone}" placeholder="Nhập số điện thoại">
-                                        <c:if test="${not empty bean.errors.errPhone}">
-                                            <small class="text-danger">${bean.errors.errPhone}</small>
-                                        </c:if>
+                                            value="" placeholder="Nhập số điện thoại">
                                     </div>
 
-                                    <%-- Đã xóa khối Giới tính ở đây --%>
+                                    <div class="divider"></div>
 
-                                        <div class="divider"></div>
-
-                                        <div class="update-section" data-bs-toggle="modal"
-                                            data-bs-target="#changePasswordModal">
-                                            <div class="update-icon">
-                                                <i class="bi bi-shield-lock"></i>
-                                            </div>
-                                            <h5>Đặt mật khẩu</h5>
-                                            <p class="text-muted">Nhấn vào đây để thay đổi mật khẩu tài khoản</p>
+                                    <div class="update-section" data-bs-toggle="modal"
+                                        data-bs-target="#changePasswordModal">
+                                        <div class="update-icon">
+                                            <i class="bi bi-shield-lock"></i>
                                         </div>
+                                        <h5>Đặt mật khẩu</h5>
+                                        <p class="text-muted">Nhấn vào đây để thay đổi mật khẩu tài khoản</p>
+                                    </div>
 
-                                        <div class="d-flex justify-content-end mt-4">
-                                            <button type="reset" class="btn btn-outline-light me-2">Hủy</button>
-                                            <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
-                                        </div>
+                                    <div class="d-flex justify-content-end mt-4">
+                                        <button type="reset" class="btn btn-outline-light me-2">Hủy</button>
+                                        <button type="submit" class="btn btn-primary" id="saveProfileBtn">Lưu thay đổi</button>
+                                    </div>
                                 </form>
                             </div>
                         </div>
@@ -343,7 +301,8 @@
                                             required>
                                     </div>
                                     <div class="mb-3">
-                                        <label for="confirmNewPassword" class="form-label">Xác nhận mật khẩu mới</label>
+                                        <label for="confirmNewPassword" class="form-label">Xác nhận
+                                            mật khẩu mới</label>
                                         <input type="password" class="form-control" id="confirmNewPassword"
                                             name="confirmNewPassword" required>
                                     </div>
@@ -361,14 +320,12 @@
                 <script
                     src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
                 <script>
-                        const USER_API_URL = "${pageContext.request.contextPath}/api/userinfo";
-
-                    //=================================================================================//
+                    const USER_API_URL = "${pageContext.request.contextPath}/api/userinfo";
+                    const PROFILE_UPDATE_API_URL = "${pageContext.request.contextPath}/api/profile/update";
 
                     document.getElementById('avatarUploadTrigger').addEventListener('click', function () {
                         document.getElementById('avatarFileInput').click();
                     });
-
                     document.getElementById('avatarFileInput').addEventListener('change', function (event) {
                         const file = event.target.files[0];
                         if (file) {
@@ -380,14 +337,13 @@
                         }
                     });
 
+                    // Hàm tải thông tin người dùng hiện tại
                     async function init() {
-                        // Lấy các phần tử cần cập nhật (Đã thay đổi ID/query selector để phù hợp với HTML mới)
-                        const emailDisplay = document.getElementById("emailDisplay"); // Thẻ p hiển thị email
-                        const emailInput = document.getElementById("emailInput");   // Thẻ input hidden
-                        const userIdSpan = document.getElementById("userIdSpan");   // Thẻ span hiển thị ID
-                        const userIdInput = document.getElementById("userIdInput"); // Thẻ input hidden ID
-                        const displayNameInput = document.getElementById("displayName"); // Input Tên hiển thị
-                        const phoneInput = document.getElementById("phone");             // Input Số điện thoại
+                        const emailDisplay = document.getElementById("emailDisplay");
+                        const userIdSpan = document.getElementById("userIdSpan");
+                        const userIdInput = document.getElementById("userIdInput");
+                        const displayNameInput = document.getElementById("displayName");
+                        const phoneInput = document.getElementById("phone");
                         const fullNameInput = document.getElementById("fullname");
 
                         try {
@@ -397,30 +353,33 @@
                             const user = await response.json();
                             console.log("Thông tin người dùng:", user);
 
-                            // Cập nhật EMAIL
+                            // Cập nhật EMAIL (chỉ hiển thị)
                             if (user.email) {
-                                emailDisplay.textContent = user.email; // Sử dụng textContent để thay đổi nội dung của thẻ <p>
-                                emailInput.value = user.email;         // Sử dụng .value để thay đổi giá trị của thẻ <input hidden>
+                                emailDisplay.textContent = user.email;
                             }
 
-                            // Cập nhật ID
+                            // Cập nhật ID (hidden)
                             if (user.id) {
                                 userIdSpan.textContent = user.id;
                                 userIdInput.value = user.id;
                             }
 
-                            // Cập nhật Tên hiển thị
+                            // Cập nhật Tên hiển thị (Username - chỉ đọc)
                             if (user.username) {
                                 displayNameInput.value = user.username;
                             }
 
+                            // Cập nhật Họ và tên (Name)
+                            if (user.name) {
+                                fullNameInput.value = user.name;
+                            } else if (user.fullname) {
+                                // Nếu API trả về fullname (trường hợp cũ), sử dụng nó
+                                fullNameInput.value = user.fullname;
+                            }
 
                             // Cập nhật Số điện thoại
                             if (user.phone) {
                                 phoneInput.value = user.phone;
-                            }
-                            if (user.fullname) {
-                                fullNameInput.value = user.fullname;
                             }
 
                             // Cập nhật Ảnh đại diện (nếu API trả về URL ảnh)
@@ -436,7 +395,59 @@
                         }
                     }
 
+                    // HÀM XỬ LÝ SỰ KIỆN CẬP NHẬT PROFILE
+                    async function handleProfileUpdate(event) {
+                        event.preventDefault(); // Ngăn chặn form submit mặc định
+
+                        const saveButton = document.getElementById('saveProfileBtn');
+                        saveButton.disabled = true;
+
+                        // Lấy dữ liệu từ form
+                        const updatedData = {
+                            id: parseInt(document.getElementById('userIdInput').value),
+                            name: document.getElementById('fullname').value, // Họ và tên (mapped to User.name in Service)
+                            // Lấy Email từ thẻ p hiển thị (giả định là giá trị đúng, không cho sửa)
+                            email: document.getElementById('emailDisplay').textContent,
+                            phone: document.getElementById('phone').value,
+                            // Username không được gửi vì nó là chỉ đọc
+                        };
+
+                        // Kiểm tra dữ liệu cần thiết
+                        if (!updatedData.id || !updatedData.name || !updatedData.email) {
+                            alert("Lỗi: Thiếu ID, Họ tên hoặc Email.");
+                            saveButton.disabled = false;
+                            return;
+                        }
+
+                        try {
+                            const response = await fetch(PROFILE_UPDATE_API_URL, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(updatedData)
+                            });
+
+                            const result = await response.json();
+
+                            if (response.ok) {
+                                alert(result.message || "Cập nhật profile thành công!");
+                                await init(); // Tải lại dữ liệu để hiển thị thông tin mới nhất
+                            } else {
+                                alert(result.error || "Cập nhật profile thất bại. Vui lòng kiểm tra lại dữ liệu.");
+                            }
+
+                        } catch (error) {
+                            console.error("Lỗi gửi yêu cầu cập nhật:", error);
+                            alert("Lỗi kết nối server. Vui lòng thử lại.");
+                        } finally {
+                            saveButton.disabled = false;
+                        }
+                    }
+
                     document.addEventListener('DOMContentLoaded', init);
+                    document.getElementById('profileForm').addEventListener('submit', handleProfileUpdate);
+
                 </script>
         </body>
 

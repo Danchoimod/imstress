@@ -54,7 +54,8 @@
 
         /* Loại bỏ CSS cho placeholder vì ta chèn iframe tĩnh */
         .video-placeholder {
-            display: none; /* Ẩn placeholder */
+            display: none;
+            /* Ẩn placeholder */
         }
 
         .video-info {
@@ -184,45 +185,50 @@
 
     <div class="watch-container">
         <div class="video-section">
-<div class="video-player" id="video-container">
-    <iframe id="video-frame"
-        width="100%"
-        height="100%"
-        src=""
-        title="Video player"
-        frameborder="0"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-        allowfullscreen>
-    </iframe>
-</div>
-        <div class="video-info">
-            <h1 class="video-title" id="video-title">title</h1>
-            <div class="video-meta">
-                <span id="video-date">loading...</span>
+            <div class="video-player" id="video-container">
+                <iframe id="video-frame"
+                    width="100%"
+                    height="100%"
+                    src=""
+                    title="Video player"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowfullscreen>
+                </iframe>
             </div>
-            <div class="video-description" id="video-description">
-                description
-            </div>
-        </div>
-
-        <div class="comment-section">
-            <h3 class="section-title">Bình luận (<span id="comment-count">0</span>)</h3>
-
-            <!-- ✅ THAY ĐỔI: Xóa logic hardcode user ID -->
-            <div class="comment-form mb-4" id="comment-form-section" style="display: none;">
-                <textarea class="form-control" id="comment-input" rows="3" placeholder="Nhập bình luận của bạn..." style="background-color: #444; color: #fff; border: 1px solid #555;" required></textarea>
-                <div class="d-flex justify-content-end mt-2">
-                    <button class="btn btn-primary" id="post-comment-btn">Gửi bình luận</button>
+            <div class="video-info">
+                <h1 class="video-title" id="video-title">title</h1>
+                <div class="video-meta">
+                    <span id="video-date">loading...</span>
+                </div>
+                <div class="video-description" id="video-description">
+                    description
                 </div>
             </div>
 
-            <div class="login-prompt" id="login-prompt-section" style="display: none;">
-                <a href="#">Đăng nhập để bình luận</a>
-            </div>
+            <div class="comment-section">
+                <h3 class="section-title">Bình luận (<span id="comment-count">0</span>)</h3>
 
-            <div id="comments-list">
-            </div>
+                <div class="comment-form mb-4" id="comment-form-section" style="display: none;">
+                    <textarea class="form-control" id="comment-input" rows="3" placeholder="Nhập bình luận của bạn..." style="background-color: #444; color: #fff; border: 1px solid #555;" required></textarea>
+                    <div class="d-flex justify-content-end mt-2">
+                        <button class="btn btn-primary" id="post-comment-btn">Gửi bình luận</button>
+                    </div>
+                </div>
 
+                <div class="login-prompt" id="login-prompt-section" style="display: none;">
+                    <a href="${pageContext.request.contextPath}/auth/login">Đăng nhập để bình luận</a>
+                </div>
+
+                <div id="comments-list">
+                </div>
+
+                <div class="load-more">
+                    <button class="btn-load-more">
+                        <i class="bi bi-arrow-down me-2"></i>Tải thêm bình luận
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -230,45 +236,39 @@
     <script>
     const VIDEO_API_URL = "${pageContext.request.contextPath}/api/videos";
     const COMMENT_API_URL = "${pageContext.request.contextPath}/api/comment";
-    const USER_API_URL = "${pageContext.request.contextPath}/api/userinfo";
-
-    console.log(VIDEO_API_URL);
-    console.log(COMMENT_API_URL);
-    console.log(USER_API_URL);
+    const USER_INFO_API_URL = "${pageContext.request.contextPath}/api/userinfo";
 
     const iframe = document.getElementById("video-frame");
 
-    // ✅ THAY ĐỔI: Khởi tạo biến user ID là null, sẽ load từ API
     let LOGGED_IN_USER_ID = null;
     let LOGGED_IN_USER_DISPLAY_NAME = 'Anonymous';
 
     // ✅ CẬP NHẬT: Hàm tải thông tin người dùng và hiển thị form comment
     async function fetchUserInfo() {
         try {
-            const response = await fetch(USER_API_URL);
+            const response = await fetch(USER_INFO_API_URL);
             if (!response.ok) {
-                console.log("User chưa đăng nhập hoặc API lỗi");
-                // Hiển thị prompt đăng nhập
+                // User chưa đăng nhập hoặc API lỗi
                 document.getElementById('login-prompt-section').style.display = 'block';
                 return;
             }
 
             const user = await response.json();
 
-            // ✅ LƯU ID USER THỰC TẾ
             if (user.id) {
                 LOGGED_IN_USER_ID = user.id;
-                console.log("✅ Logged in user ID:", LOGGED_IN_USER_ID);
             }
 
+            // ✅ CẬP NHẬT: Sử dụng username làm tên hiển thị
             if (user.username) {
                 LOGGED_IN_USER_DISPLAY_NAME = user.username;
+            } else if (user.name) {
+                // Fallback nếu username không tồn tại
+                LOGGED_IN_USER_DISPLAY_NAME = user.name;
             }
-            console.log("Logged in user display name:", LOGGED_IN_USER_DISPLAY_NAME);
 
             // Hiển thị form comment
             document.getElementById('comment-form-section').style.display = 'block';
-
             const commentInput = document.getElementById('comment-input');
             if (commentInput) {
                 commentInput.placeholder = `Bình luận với tên ${LOGGED_IN_USER_DISPLAY_NAME}...`;
@@ -283,11 +283,8 @@
     //lấy id của video
     function getYouTubeId(url) {
         if (!url) return null;
-
-        // Làm sạch URL: loại bỏ khoảng trắng và dấu nháy kép (nếu dính từ DB)
         url = url.trim().replace(/"/g, '');
 
-        // Regex hỗ trợ nhiều định dạng URL của Youtube
         const patterns = [
             /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
             /youtube\.com\/watch\?.*v=([a-zA-Z0-9_-]{11})/,
@@ -305,12 +302,12 @@
         return null;
     }
 
-    // ✅ CẬP NHẬT: Hàm render một comment (Đã xóa author-level)
+    // ✅ CẬP NHẬT: Hàm render một comment
     function renderComment(comment) {
-        // Xử lý giá trị null/undefined bằng cách gán giá trị mặc định (||)
+        // Sử dụng userName (là username/tên hiển thị từ API)
         const userName = comment.userName || 'Anonymous';
         const content = comment.content || 'Không có nội dung.';
-        const timeAgo = "Vừa xong"; // Giữ nguyên, cần logic tính thời gian thực
+        const timeAgo = "Vừa xong"; // Cần logic tính thời gian thực
 
         let html = '';
         html += '<div class="comment-item">';
@@ -327,29 +324,25 @@
         return html;
     }
 
-    // THÊM: Hàm tải danh sách comment (Dùng nối chuỗi thuần)
+    // Hàm tải danh sách comment
     async function fetchComments(videoId) {
         if (!videoId) return;
-
         try {
             const response = await fetch(COMMENT_API_URL + "?videoid=" + videoId);
             const contentType = response.headers.get("content-type") || "";
             if (!response.ok) throw new Error("HTTP " + response.status);
-
             if (!contentType.includes("application/json")) {
                 const preview = (await response.text()).slice(0, 200);
                 throw new Error("Server không trả JSON: " + preview);
             }
 
             const comments = await response.json();
-
             const listContainer = document.getElementById('comments-list');
             listContainer.innerHTML = '';
 
             if (comments.length === 0) {
                 listContainer.innerHTML = '<p class="text-center text-muted">Chưa có bình luận nào.</p>';
             } else {
-                // watch.jsp (Logic trong fetchComments)
                 comments.forEach(comment => {
                     // Chỉ hiển thị comment cấp 1 (parent_id = null)
                     if (comment.parentCommentId == null) {
@@ -358,7 +351,6 @@
                 });
             }
             document.getElementById('comment-count').textContent = comments.length;
-
         } catch (error) {
             console.error("Lỗi khi tải bình luận:", error);
             document.getElementById('comments-list').innerHTML =
@@ -385,14 +377,12 @@
         const postButton = document.getElementById('post-comment-btn');
         postButton.disabled = true;
 
-        // ✅ SỬ DỤNG ID USER THỰC TẾ TỪ API
+        // SỬ DỤNG ID USER THỰC TẾ TỪ API
         const commentDataJson = JSON.stringify({
             content: content,
             video: { id: parseInt(videoUrlID) },
-            user: { id: LOGGED_IN_USER_ID }  // ✅ Dùng ID từ API
+            user: { id: LOGGED_IN_USER_ID }  // Dùng ID từ API
         });
-
-        console.log("📤 Sending comment with user ID:", LOGGED_IN_USER_ID);
 
         try {
             const response = await fetch(COMMENT_API_URL, {
@@ -425,41 +415,28 @@
     async function fetchAndPlayVideo() {
         try {
            const videoUrlID = (new URLSearchParams(window.location.search)).get('id');
-           console.log(videoUrlID) //in ra url cua video hien tai
+            if (!videoUrlID) return;
 
-            // 🚨 CẬP NHẬT: Sử dụng nối chuỗi thuần
+            // Sử dụng nối chuỗi thuần
             const response = await fetch(VIDEO_API_URL);
-
             if (!response.ok) throw new Error("Lỗi kết nối API");
             const videos = await response.json();
-            console.log("2. Fetch danh sách video thành công. Tổng số:", videos.length);
-            const targetVideo = videos.find(video => video.id == videoUrlID);
 
+            const targetVideo = videos.find(video => video.id == videoUrlID);
             if (!targetVideo) {
                 console.error("Không tìm thấy video với ID:", videoUrlID);
                 return;
             }
 
-            console.log(targetVideo);
-            console.log("ID:", targetVideo.id);
-            console.log("Tiêu đề (title):", targetVideo.title);
             document.getElementById('video-title').textContent = targetVideo.title;
             document.getElementById('video-date').textContent = targetVideo.createAt;
             document.getElementById('video-description').textContent = targetVideo.desc;
-            console.log("Mô tả (desc):", targetVideo.desc);
-            console.log("Poster:", targetVideo.poster);
-            console.log("URL Video:", targetVideo.url);
-            console.log("URL Video:", getYouTubeId(targetVideo.url));
-            console.log("Ngày tạo (createAt):", targetVideo.createAt);
-            console.log("Trạng thái (status):", targetVideo.status);
 
             // Cập nhật iframe src
             iframe.src = "https://www.youtube.com/embed/" + getYouTubeId(targetVideo.url);
 
             // THÊM: Gọi hàm tải bình luận sau khi có video ID
             await fetchComments(videoUrlID);
-
-
         } catch (error) {
             console.error("Lỗi khi tải dữ liệu video:", error);
         }
@@ -482,4 +459,3 @@
     </script>
 </body>
 </html>
-

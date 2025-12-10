@@ -37,19 +37,19 @@ public class CommentApi extends HttpServlet {
             List<Comment> comments = CommentServices.getCommentbyID(videoId);
             for (Comment entity : comments) {
                 CommentResponse response = new CommentResponse();
-                response.setId(entity.getId()); //
-                response.setContent(entity.getContent()); //
+                response.setId(entity.getId());
+                response.setContent(entity.getContent());
                 response.setStatus(entity.isStatus());
 
-                // Ánh xạ User Name (Giả định Entity Comment.getUser().getName() có sẵn)
-                response.setUserName(entity.getUser() != null ? entity.getUser().getName() : "Anonymous");
+                // ✅ THAY ĐỔI: Ánh xạ User Name thành USERNAME (Tên hiển thị)
+                response.setUserName(entity.getUser() != null ? entity.getUser().getUsername() : "Anonymous");
 
                 // Ánh xạ Parent ID
                 response.setParentCommentId(entity.getComment() != null ? entity.getComment().getId() : null);
 
                 // Bỏ qua createAt
 
-                responsecomment.add(response); //
+                responsecomment.add(response);
             }
 
             Gson gson = new GsonBuilder().serializeNulls().create(); // Tạo Gson
