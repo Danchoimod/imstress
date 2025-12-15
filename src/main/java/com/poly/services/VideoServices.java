@@ -47,6 +47,31 @@ public class VideoServices {
 		manager.close();
 		return null;
 	}
+	public static List<Video> searchVideosByTitle(String keyword) {
+		List<Video> videos = new ArrayList<>();
+		EntityManager manager = JPAUtils.getEntityManager();
+		try {
+			// Truy vấn LIKE không phân biệt hoa thường, lấy video status=1 và category status=1
+			String sql = "SELECT v.* FROM videos v " +
+					"INNER JOIN categories c ON v.cat_id = c.id " +
+					"WHERE LOWER(v.title) LIKE LOWER(?1) " +
+					"AND v.status = 1 AND c.status = 1 " +
+					"ORDER BY v.id DESC";
+
+			Query query = manager.createNativeQuery(sql, Video.class);
+			// Thêm % vào keyword để tìm kiếm partial match
+			query.setParameter(1, "%" + keyword + "%");
+			videos = query.getResultList();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return new ArrayList<>();
+		} finally {
+			if (manager != null) {
+				manager.close();
+			}
+		}
+		return videos;
+	}
 
 	//	- Sửa (Kiểm tra user id) **
 //    - Category có tồn tại không?
