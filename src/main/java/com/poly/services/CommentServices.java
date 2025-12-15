@@ -3,10 +3,12 @@ package com.poly.services;
 
 import com.poly.entities.Comment;
 import com.poly.util.JPAUtils;
+import com.poly.util.Utils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.Query;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -111,6 +113,54 @@ public class CommentServices {
             if (manager != null) {
                 manager.close();
             }
+        }
+    }
+
+    public static Comment findById(int id) {
+        EntityManager manager = JPAUtils.getEntityManager();
+        try {
+            return manager.find(Comment.class, id);
+        } finally {
+            if (manager != null) {
+                manager.close();
+            }
+        }
+    }
+
+    public static boolean deleteComment(int id) {
+        EntityManager manager = JPAUtils.getEntityManager();
+        EntityTransaction transaction = manager.getTransaction();
+        try {
+            Comment comment = manager.find(Comment.class, id);
+            if (comment == null) {
+                return false;
+            }
+            transaction.begin();
+            manager.remove(comment);
+            transaction.commit();
+            return true;
+        } catch (Exception e) {
+            if (transaction != null && transaction.isActive()) {
+                transaction.rollback();
+            }
+            e.printStackTrace();
+            return false;
+        } finally {
+            if (manager != null) {
+                manager.close();
+            }
+        }
+    }
+
+    public static Integer getCurrentUserId(HttpServletRequest request) {
+        String userIdCookie = Utils.getCookieValue(Utils.COOKIE_KEY_USER_ID, request);
+        if (userIdCookie == null) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(userIdCookie);
+        } catch (NumberFormatException e) {
+            return null;
         }
     }
 }

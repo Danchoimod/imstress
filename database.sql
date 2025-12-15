@@ -18,7 +18,7 @@ GO
 
 CREATE TABLE users (
     id INT IDENTITY(1,1) PRIMARY KEY,
-    username VARCHAR(100) NOT NULL UNIQUE,  -- Entity: length=100, unique=true, nullable=false
+    username VARCHAR(100) NOT NULL,  -- Entity: length=100, unique=true, nullable=false
     password VARCHAR(255) NOT NULL,         -- Entity: length=255, nullable=false
     name NVARCHAR(100) NOT NULL,            -- Entity: NVARCHAR(100), nullable=false
     email VARCHAR(150) NOT NULL UNIQUE,     -- Entity: length=150, unique=true, nullable=false
@@ -35,6 +35,7 @@ CREATE TABLE categories (
     id INT IDENTITY(1,1) PRIMARY KEY,       -- Entity: IDENTITY(1,1)
     name NVARCHAR(100) NOT NULL             -- Entity: length=100, nullable=false. (Đã xóa cột description)
 );
+ALTER TABLE categories ADD status INT NOT NULL DEFAULT 1;
 GO
 
 ---
@@ -141,7 +142,7 @@ GO
 use java4;
 Select *from users;
 select *from comments;
-select *from categories;
+    select *from categories;
 select *from favourites;
 select *from videos;
 
@@ -155,4 +156,4 @@ FROM videos
 WHERE cat_id = 2;
 
 Select *from comments
-where video_id = 2 ORDER BY id DESC;
+where video_id = 2 and Status = 1 ORDER BY id DESC;

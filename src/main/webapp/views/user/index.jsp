@@ -181,9 +181,6 @@
                         <h3 class="movie-title">\${movie.title}</h3>
                         <div class="movie-meta">
                             <span class="movie-date">\${displayDate}</span>
-                            <div class="movie-rating">
-                                <i class="bi bi-star-fill"></i>
-                            </div>
                         </div>
                     </div>
                 </div>

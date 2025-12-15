@@ -26,7 +26,7 @@ public class VideoApi extends HttpServlet {
     @Operation(
             summary = "Lấy danh sách video (Tổng hợp)", // Tiêu đề chung cho chức năng GET
             description = "Phương thức này xử lý hai đường dẫn GET khác nhau:\n" +
-                    "1. **GET /api/videos**: Lấy toàn bộ danh sách video đang hoạt động (Active Videos).\n" +
+                    "1. **GET /api/videos**: Lấy toàn bộ danh sách video đang hoạt động (Active Videos) CÓ DANH MỤC ACTIVE.\n" +
                     "2. **GET /api/videosoft/**: Lấy danh sách video đã được đánh dấu xóa mềm (Soft Deleted Videos) hoặc theo logic lọc khác.", // Chi tiết hóa các endpoint
             responses = {
                     @ApiResponse(responseCode = "200", description = "Thành công",
@@ -41,7 +41,8 @@ public class VideoApi extends HttpServlet {
         if(path.equals("/api/videos")){
             try{
                 resp.setContentType("application/json; charset=UTF-8");
-                List<Video> videos = VideoServices.getAllVideo(); // lấy enity
+                // ĐÃ SỬA: Chỉ lấy video có status=1 và Category status=1
+                List<Video> videos = VideoServices.getAllActiveVideos(); // lấy enity
                 //ánh xạ .
                 for (Video entity : videos) {
                     VideoReponse response = new VideoReponse();

@@ -245,5 +245,44 @@ public class VideoServices {
 		manager.close();
 		return videos;
 	}
+	public static void increaseViewCount(int videoId) {
+        EntityManager manager = null;
+        try {
+            manager = JPAUtils.getEntityManager();
+            manager.getTransaction().begin();
+            Video video = manager.find(Video.class, videoId);
+            if (video != null) {
+                video.setViewCount(video.getViewCount() + 1);
+                manager.merge(video);
+            }
+            manager.getTransaction().commit();
+        } catch (Exception e) {
+            if (manager != null && manager.getTransaction().isActive()) {
+                manager.getTransaction().rollback();
+            }
+            throw e;
+        } finally {
+            if (manager != null && manager.isOpen()) {
+                manager.close();
+            }
+        }
+    }
+	public static List<Video> getAllActiveVideos() {
+		List<Video> videos = new ArrayList<>();
+		EntityManager manager = JPAUtils.getEntityManager();
+		try {
+			// JPQL: Lọc video có trạng thái hoạt động (1) và danh mục hoạt động (1)
+			String jpql = "SELECT v FROM Video v JOIN v.category c WHERE v.status = 1 AND c.status = 1 ORDER BY v.createAt DESC";
+
+			videos = manager.createQuery(jpql, Video.class)
+					.getResultList();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Collections.emptyList();
+		} finally {
+			if (manager != null) manager.close();
+		}
+		return videos;
+	}
 
 }

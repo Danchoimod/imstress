@@ -120,6 +120,27 @@
             display: flex;
             justify-content: space-between;
             margin-bottom: 0.5rem;
+            gap: 1rem;
+        }
+
+        .comment-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .comment-delete-btn {
+            background: transparent;
+            border: none;
+            color: #ff6b6b;
+            cursor: pointer;
+            font-size: 0.9rem;
+            padding: 0.2rem 0.4rem;
+        }
+
+        .comment-delete-btn:hover {
+            color: #ff8a8a;
+            text-decoration: underline;
         }
 
         .comment-author {
@@ -304,10 +325,10 @@
 
     // ✅ CẬP NHẬT: Hàm render một comment
     function renderComment(comment) {
-        // Sử dụng userName (là username/tên hiển thị từ API)
         const userName = comment.userName || 'Anonymous';
         const content = comment.content || 'Không có nội dung.';
         const timeAgo = "Vừa xong"; // Cần logic tính thời gian thực
+        const canDelete = LOGGED_IN_USER_ID !== null && Number(LOGGED_IN_USER_ID) === Number(comment.userId);
 
         let html = '';
         html += '<div class="comment-item">';
@@ -320,6 +341,11 @@
         html += '    <div class="comment-content">';
         html += '        ' + content;
         html += '    </div>';
+        if (canDelete) {
+            html += '    <div class="comment-actions">';
+            html += '        <button class="comment-delete-btn" onclick="deleteComment(' + comment.id + ')">Xóa</button>';
+            html += '    </div>';
+        }
         html += '</div>';
         return html;
     }
@@ -408,6 +434,30 @@
             alert("Gửi bình luận thất bại: " + error.message);
         } finally {
             postButton.disabled = false;
+        }
+    }
+
+    async function deleteComment(commentId) {
+        if (!LOGGED_IN_USER_ID) {
+            alert('Vui lòng đăng nhập để xóa bình luận của bạn.');
+            return;
+        }
+        if (!confirm('Bạn có chắc chắn muốn xóa bình luận này?')) {
+            return;
+        }
+
+        const videoUrlID = (new URLSearchParams(window.location.search)).get('id');
+        try {
+            const response = await fetch(`${COMMENT_API_URL}?id=${commentId}`, { method: 'DELETE' });
+            if (response.status === 204) {
+                await fetchComments(videoUrlID);
+                return;
+            }
+            const errorText = await response.text();
+            alert(errorText || 'Xóa bình luận thất bại.');
+        } catch (error) {
+            console.error('Lỗi khi xóa bình luận:', error);
+            alert('Không thể xóa bình luận lúc này.');
         }
     }
 

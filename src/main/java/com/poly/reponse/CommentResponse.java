@@ -15,6 +15,7 @@ public class CommentResponse {
     private String content;
     private boolean status;
     private String userName; // Tên người dùng bình luận
+    private Integer userId; // ID người dùng để so sánh quyền xóa
     private Integer parentCommentId; // ID của comment cha nếu là reply
 
     private Date createAt; // Giữ lại theo file bạn cung cấp

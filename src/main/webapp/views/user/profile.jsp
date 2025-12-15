@@ -144,6 +144,14 @@
                     /* Xóa margin mặc định của p */
                 }
 
+                /* Thêm style cho lỗi */
+                .text-danger {
+                    color: var(--primary-color) !important;
+                    font-size: 0.85rem;
+                    display: block;
+                    margin-top: 0.25rem;
+                }
+
                 /* Xóa style cho Modal vì đã xóa Modal */
             </style>
         </head>
@@ -202,12 +210,15 @@
                                         <label for="fullname" class="form-label">Họ và tên </label>
                                         <input type="text" class="form-control" id="fullname" name="fullname"
                                             value="">
+                                        <span class="text-danger" id="fullnameError"></span>
                                     </div>
 
                                     <div class="mb-4">
                                         <label for="phone" class="form-label">Số điện thoại</label>
                                         <input type="tel" class="form-control" id="phone" name="phone"
                                             value="" placeholder="Nhập số điện thoại">
+                                        <small class="text-muted">Định dạng: 10 hoặc 11 chữ số (vd: 0987654321)</small>
+                                        <span class="text-danger" id="phoneError"></span>
                                     </div>
 
                                     <div class="divider"></div>
@@ -232,7 +243,12 @@
                     const USER_API_URL = "${pageContext.request.contextPath}/api/userinfo";
                     const PROFILE_UPDATE_API_URL = "${pageContext.request.contextPath}/api/profile/update";
 
-                    // XÓA: Logic liên quan đến đổi avatar (avatarUploadTrigger, avatarFileInput, v.v.)
+                    // Helper để xóa thông báo lỗi
+                    function clearErrors() {
+                        document.getElementById('fullnameError').textContent = '';
+                        document.getElementById('phoneError').textContent = '';
+                    }
+
 
                     // Hàm tải thông tin người dùng hiện tại
                     async function init() {
@@ -242,7 +258,16 @@
                         const displayNameInput = document.getElementById("displayName");
                         const phoneInput = document.getElementById("phone");
                         const fullNameInput = document.getElementById("fullname");
-                        // const currentAvatar = document.getElementById('currentAvatar'); // XÓA: Không cần avatar nữa
+
+                        // Clear inputs when loading
+                        emailDisplay.textContent = "loading...";
+                        userIdSpan.textContent = "0000";
+                        userIdInput.value = "0000";
+                        displayNameInput.value = "";
+                        phoneInput.value = "";
+                        fullNameInput.value = "";
+
+                        clearErrors(); // Xóa lỗi cũ
 
                         try {
                             const response = await fetch(USER_API_URL);
@@ -280,15 +305,6 @@
                                 phoneInput.value = user.phone;
                             }
 
-                            // XÓA: Logic cập nhật Ảnh đại diện
-                            /*
-                            if (user.avatarUrl) {
-                                currentAvatar.src = user.avatarUrl;
-                                document.querySelector('input[name="currentAvatarUrl"]').value = user.avatarUrl;
-                            }
-                            */
-
-
                         } catch (error) {
                             console.error("Lỗi khi tải dữ liệu người dùng:", error);
                             emailDisplay.textContent = "Không thể tải email";
@@ -299,22 +315,60 @@
                     async function handleProfileUpdate(event) {
                         event.preventDefault(); // Ngăn chặn form submit mặc định
 
+                        clearErrors(); // Xóa lỗi cũ
+
                         const saveButton = document.getElementById('saveProfileBtn');
                         saveButton.disabled = true;
+                        let isValid = true;
 
-                        // Lấy dữ liệu từ form
+                        // Lấy giá trị input
+                        const fullNameInput = document.getElementById('fullname');
+                        const phoneInput = document.getElementById('phone');
+
+                        const fullName = fullNameInput.value.trim();
+                        const phone = phoneInput.value.trim();
+
+                        // 1. Validate Họ và tên (fullname)
+                        if (fullName === "") {
+                            document.getElementById('fullnameError').textContent = "Họ và tên không được để trống.";
+                            isValid = false;
+                        } else if (fullName.length < 3) {
+                            document.getElementById('fullnameError').textContent = "Họ và tên phải có ít nhất 3 ký tự.";
+                            isValid = false;
+                        }
+
+                        // 2. Validate Số điện thoại (phone)
+                        // Định dạng cơ bản: 10 hoặc 11 chữ số
+                        const phoneRegex = /^\d{10,11}$/;
+
+                        if (phone === "") {
+                            document.getElementById('phoneError').textContent = "Số điện thoại không được để trống.";
+                            isValid = false;
+                        } else if (!phoneRegex.test(phone)) {
+                            document.getElementById('phoneError').textContent = "Số điện thoại không hợp lệ (phải là 10-11 chữ số).";
+                            isValid = false;
+                        }
+
+                        if (!isValid) {
+                            saveButton.disabled = false;
+                            alert("Vui lòng sửa các lỗi trong form trước khi lưu.");
+                            return;
+                        }
+
+
+                        // Lấy dữ liệu từ form (nếu validation thành công)
                         const updatedData = {
                             id: parseInt(document.getElementById('userIdInput').value),
-                            name: document.getElementById('fullname').value, // Họ và tên (mapped to User.name in Service)
+                            name: fullName, // Sử dụng giá trị đã validate
                             // Lấy Email từ thẻ p hiển thị (giả định là giá trị đúng, không cho sửa)
                             email: document.getElementById('emailDisplay').textContent,
-                            phone: document.getElementById('phone').value,
+                            phone: phone, // Sử dụng giá trị đã validate
                             // Username không được gửi vì nó là chỉ đọc
                         };
 
-                        // Kiểm tra dữ liệu cần thiết
+                        // Kiểm tra dữ liệu cần thiết lần cuối
                         if (!updatedData.id || !updatedData.name || !updatedData.email) {
-                            alert("Lỗi: Thiếu ID, Họ tên hoặc Email.");
+                            alert("Lỗi: Thiếu ID, Họ tên hoặc Email. Vui lòng tải lại trang.");
                             saveButton.disabled = false;
                             return;
                         }
