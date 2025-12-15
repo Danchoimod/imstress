@@ -11,7 +11,6 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
     <style>
-        /* ... (Phần CSS giữ nguyên) ... */
         :root {
             --primary-color: #e50914;
             --dark-color: #141414;
@@ -23,7 +22,6 @@
             background-color: #191b24;
             color: var(--light-color);
             font-family: 'Helvetica Neue', Arial, sans-serif;
-            /* Đảm bảo header không che nội dung nếu header fixed */
             padding-top: 80px;
         }
 
@@ -66,7 +64,6 @@
             width: 100%;
             border-radius: 10px;
             margin-bottom: 1.5rem;
-            /* Thêm chiều cao tối thiểu để tránh layout shift */
             min-height: 450px;
             object-fit: cover;
             background-color: #333;
@@ -120,6 +117,25 @@
             line-height: 1.6;
             margin-bottom: 1.5rem;
         }
+
+        /* Share Modal Styles */
+        .share-btn {
+            min-width: 120px;
+        }
+
+        .share-btn i {
+            font-size: 1.2rem;
+        }
+
+        #shareModal .modal-content {
+            border: 1px solid #444;
+        }
+
+        #shareModal .form-control:focus {
+            background-color: #1a1a1a;
+            border-color: var(--primary-color);
+            color: #f4f4f4;
+        }
     </style>
 </head>
 <body>
@@ -160,7 +176,7 @@
                         <button id="btn-favorite" class="btn btn-outline-light">
                             <i class="bi bi-heart me-2" id="favorite-icon"></i><span id="favorite-text">Yêu thích</span>
                         </button>
-                        <button class="btn btn-outline-light">
+                        <button id="btn-share" class="btn btn-outline-light">
                             <i class="bi bi-share me-2"></i>Chia sẻ
                         </button>
                     </div>
@@ -184,7 +200,10 @@
     <script>
         const VIDEO_DETAIL_API_URL = "${pageContext.request.contextPath}/api/videos";
         const FAV_API_URL = "${pageContext.request.contextPath}/api/fav";
-        const USER_INFO_API_URL = "${pageContext.request.contextPath}/api/userinfo"; // API lấy thông tin người dùng
+        const USER_INFO_API_URL = "${pageContext.request.contextPath}/api/userinfo";
+
+        // Biến lưu thông tin phim hiện tại
+        let currentMovie = null;
 
         function getQueryParam(param) {
             const urlParams = new URLSearchParams(window.location.search);
@@ -221,14 +240,13 @@
             params.append("videoId", videoId);
 
             try {
-                // SỬ DỤNG AXIOS.POST
                 const response = await axios.post(FAV_API_URL, params.toString(), {
                     headers: {
                         "Content-Type": "application/x-www-form-urlencoded"
                     }
                 });
 
-                const result = response.data; // Axios tự động parse JSON
+                const result = response.data;
 
                 alert(result.message);
                 updateFavoriteButton(result.action === 'favorited');
@@ -240,7 +258,6 @@
                     alert('Vui lòng đăng nhập để sử dụng chức năng yêu thích.');
                     window.location.href = '${pageContext.request.contextPath}/auth/login';
                 } else if (error.response && error.response.data) {
-                    // Nếu có lỗi trả về từ server dưới dạng JSON (vd: error.response.data.error)
                     alert(error.response.data.error || error.response.data.message || "Cập nhật yêu thích thất bại.");
                 } else {
                     alert("Lỗi kết nối hoặc xử lý server. Vui lòng kiểm tra console.");
@@ -249,6 +266,205 @@
                 favoriteBtn.disabled = false;
             }
         }
+
+        // ==================== TÍNH NĂNG CHIA SẺ ====================
+
+        // Hàm chia sẻ phim
+        function shareMovie(movie) {
+            const shareUrl = window.location.href;
+            const shareTitle = movie.title;
+            const shareText = `Xem phim "${movie.title}" trên RoPhim`;
+
+            // Kiểm tra nếu trình duyệt hỗ trợ Web Share API (mobile-friendly)
+            if (navigator.share) {
+                navigator.share({
+                    title: shareTitle,
+                    text: shareText,
+                    url: shareUrl
+                })
+                .then(() => {
+                    console.log('Chia sẻ thành công!');
+                })
+                .catch((error) => {
+                    console.log('Hủy chia sẻ hoặc lỗi:', error);
+                });
+            } else {
+                // Nếu không hỗ trợ Web Share API, hiện modal tùy chọn
+                showShareModal(movie, shareUrl, shareTitle, shareText);
+            }
+        }
+
+        // Hàm hiển thị modal chia sẻ
+        function showShareModal(movie, url, title, text) {
+            const modalHtml = `
+                <div class="modal fade" id="shareModal" tabindex="-1" aria-labelledby="shareModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content" style="background-color: #2c2c2c; color: #f4f4f4;">
+                            <div class="modal-header border-secondary">
+                                <h5 class="modal-title" id="shareModalLabel">
+                                    <i class="bi bi-share me-2"></i>Chia sẻ phim
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <h6 class="mb-3">${title}</h6>
+                                    <div class="d-flex gap-3 mb-4 justify-content-center flex-wrap">
+                                        <button class="btn btn-outline-light share-btn" data-platform="facebook">
+                                            <i class="bi bi-facebook"></i> Facebook
+                                        </button>
+                                        <button class="btn btn-outline-light share-btn" data-platform="twitter">
+                                            <i class="bi bi-twitter"></i> Twitter
+                                        </button>
+                                        <button class="btn btn-outline-light share-btn" data-platform="telegram">
+                                            <i class="bi bi-telegram"></i> Telegram
+                                        </button>
+                                        <button class="btn btn-outline-light share-btn" data-platform="zalo">
+                                            <i class="bi bi-chat-dots"></i> Zalo
+                                        </button>
+                                        <button class="btn btn-outline-light share-btn" data-platform="email">
+                                            <i class="bi bi-envelope"></i> Email
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="divider" style="border-top: 1px solid #444; margin: 1.5rem 0;"></div>
+
+                                <div>
+                                    <label class="form-label">Hoặc sao chép link:</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="shareUrlInput" value="${url}" readonly style="background-color: #1a1a1a; color: #f4f4f4; border-color: #444;">
+                                        <button class="btn btn-primary" id="copyUrlBtn" type="button">
+                                            <i class="bi bi-clipboard"></i> Sao chép
+                                        </button>
+                                    </div>
+                                    <small class="text-success d-none" id="copySuccess">
+                                        <i class="bi bi-check-circle"></i> Đã sao chép!
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Xóa modal cũ nếu có
+            const oldModal = document.getElementById('shareModal');
+            if (oldModal) {
+                oldModal.remove();
+            }
+
+            // Thêm modal vào body
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+            // Khởi tạo modal Bootstrap
+            const modal = new bootstrap.Modal(document.getElementById('shareModal'));
+            modal.show();
+
+            // Xử lý sự kiện các nút chia sẻ
+            document.querySelectorAll('.share-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const platform = this.getAttribute('data-platform');
+                    shareToSocialMedia(platform, url, title, text);
+                });
+            });
+
+            // Xử lý nút copy
+            document.getElementById('copyUrlBtn').addEventListener('click', function() {
+                copyToClipboard(url);
+            });
+
+            // Xóa modal khi đóng
+            document.getElementById('shareModal').addEventListener('hidden.bs.modal', function() {
+                this.remove();
+            });
+        }
+
+        // Hàm chia sẻ đến các nền tảng mạng xã hội
+        function shareToSocialMedia(platform, url, title, text) {
+            const encodedUrl = encodeURIComponent(url);
+            const encodedTitle = encodeURIComponent(title);
+            const encodedText = encodeURIComponent(text);
+
+            let shareLink = '';
+
+            switch(platform) {
+                case 'facebook':
+                    shareLink = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
+                    break;
+                case 'twitter':
+                    shareLink = `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedText}`;
+                    break;
+                case 'telegram':
+                    shareLink = `https://t.me/share/url?url=${encodedUrl}&text=${encodedText}`;
+                    break;
+                case 'zalo':
+                    shareLink = `https://zalo.me/share/url?url=${encodedUrl}`;
+                    break;
+                case 'email':
+                    shareLink = `mailto:?subject=${encodedTitle}&body=${encodedText}%0A%0A${encodedUrl}`;
+                    break;
+                default:
+                    alert('Nền tảng không được hỗ trợ!');
+                    return;
+            }
+
+            // Mở cửa sổ mới để chia sẻ
+            window.open(shareLink, '_blank', 'width=600,height=400');
+        }
+
+        // Hàm sao chép link vào clipboard
+        function copyToClipboard(text) {
+            const input = document.getElementById('shareUrlInput');
+            const copyBtn = document.getElementById('copyUrlBtn');
+            const successMsg = document.getElementById('copySuccess');
+
+            // Sử dụng Clipboard API
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text)
+                    .then(() => {
+                        showCopySuccess(copyBtn, successMsg);
+                    })
+                    .catch(err => {
+                        console.error('Lỗi khi sao chép:', err);
+                        fallbackCopyToClipboard(input, copyBtn, successMsg);
+                    });
+            } else {
+                // Fallback cho trình duyệt cũ
+                fallbackCopyToClipboard(input, copyBtn, successMsg);
+            }
+        }
+
+        // Fallback method để copy
+        function fallbackCopyToClipboard(input, btn, successMsg) {
+            input.select();
+            input.setSelectionRange(0, 99999);
+
+            try {
+                document.execCommand('copy');
+                showCopySuccess(btn, successMsg);
+            } catch (err) {
+                alert('Không thể sao chép. Vui lòng copy thủ công!');
+            }
+        }
+
+        // Hiển thị thông báo copy thành công
+        function showCopySuccess(btn, successMsg) {
+            btn.innerHTML = '<i class="bi bi-check-circle"></i> Đã copy!';
+            btn.classList.add('btn-success');
+            btn.classList.remove('btn-primary');
+
+            successMsg.classList.remove('d-none');
+
+            setTimeout(() => {
+                btn.innerHTML = '<i class="bi bi-clipboard"></i> Sao chép';
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-primary');
+                successMsg.classList.add('d-none');
+            }, 2000);
+        }
+
+        // ==================== KẾT THÚC TÍNH NĂNG CHIA SẺ ====================
 
         // Hàm fetch chi tiết phim DÙNG AXIOS
         async function fetchVideoDetail() {
@@ -275,6 +491,9 @@
                     throw new Error("Không tìm thấy phim này trong cơ sở dữ liệu.");
                 }
 
+                // Lưu thông tin phim vào biến global
+                currentMovie = movie;
+
                 updateUI(movie);
 
                 // 2. LẤY THÔNG TIN USER ĐỂ CHECK LOGIN
@@ -283,13 +502,11 @@
                 try {
                     const userInfoResponse = await axios.get(USER_INFO_API_URL);
                     const userData = userInfoResponse.data;
-                    // Giả sử API trả về đối tượng người dùng có trường 'id' nếu đã đăng nhập
                     if (userData && userData.id) {
                         userId = userData.id;
                         isLoggedIn = true;
                     }
                 } catch (e) {
-                    // Bất kỳ lỗi nào ở đây (vd: 401, 500) đều được coi là chưa đăng nhập
                     isLoggedIn = false;
                     console.warn("User not logged in or API error:", e.response ? e.response.status : e.message);
                 }
@@ -303,7 +520,6 @@
                         const favStatus = favResponse.data;
                         updateFavoriteButton(favStatus.isFavorited);
                     } catch (e) {
-                        // Nếu API check fav lỗi, giả sử chưa thích
                         updateFavoriteButton(false);
                         console.warn("Lỗi khi check trạng thái yêu thích:", e.response ? e.response.status : e.message);
                     }
@@ -318,6 +534,15 @@
                     });
                 }
 
+                // 4. GÁN SỰ KIỆN CHO NÚT CHIA SẺ
+                const shareBtn = document.getElementById('btn-share');
+                if (shareBtn && currentMovie) {
+                    shareBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        shareMovie(currentMovie);
+                    });
+                }
+
                 // Ẩn spinner, hiện nội dung
                 spinner.style.display = 'none';
                 content.style.display = 'block';
@@ -329,7 +554,6 @@
                 if (error.response && error.response.status) {
                     errorMessage += ` Lỗi HTTP: ${error.response.status}`;
                 } else if (error.message) {
-                    // Lỗi từ fetch (ví dụ: không tìm thấy phim)
                     errorMessage = `Lỗi: ${error.message}`;
                 }
 
@@ -368,13 +592,6 @@
 
         // Khởi chạy khi trang load
         document.addEventListener('DOMContentLoaded', fetchVideoDetail);
-
-        document.querySelectorAll('.btn-outline-light:not(#btn-favorite)').forEach(button => {
-            button.addEventListener('click', function() {
-                const buttonText = this.textContent.trim();
-                alert(`Chức năng ${buttonText} đang phát triển!`);
-            });
-        });
     </script>
 </body>
 </html>

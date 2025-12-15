@@ -119,6 +119,25 @@ body {
                 <div class="mb-3" style="font-size: 0.95rem; color: #b0b8d1;">
                     Nếu bạn đã có tài khoản, <a href="${pageContext.request.contextPath}/auth/login" class="text-link">đăng nhập</a>
                 </div>
+
+                <!-- Hiển thị thông báo lỗi chung -->
+                <% if (request.getAttribute("errorMessage") != null) { %>
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert" style="background-color: #ff4444; border: none; color: #fff; border-radius: 8px;">
+                        <i class="bi bi-exclamation-circle-fill me-2"></i>
+                        <%= request.getAttribute("errorMessage") %>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                <% } %>
+
+                <!-- Hiển thị thông báo thành công -->
+                <% if (request.getAttribute("successMessage") != null) { %>
+                    <div class="alert alert-success alert-dismissible fade show" role="alert" style="background-color: #00C851; border: none; color: #fff; border-radius: 8px;">
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        <%= request.getAttribute("successMessage") %>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                <% } %>
+
                 <form method="POST" action="${pageContext.request.contextPath}/auth/register">
                  <div class="mb-3">
                      <label class="form-label">Tên Hiển thị </label>

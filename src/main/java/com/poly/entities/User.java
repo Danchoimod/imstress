@@ -18,7 +18,7 @@ public class User {
     @Column(name = "id", nullable = false)
     private Integer id;
 
-    @Column(name = "username", length = 50, unique =     true, nullable = false) //trong trường hợp sql không có
+    @Column(name = "username", length = 50, nullable = false) //trong trường hợp sql không có
     private String username;
 
     @Column(name = "password", length = 100, unique = false, nullable = false) //nếu sql server nếu gíá trị không có sẫn

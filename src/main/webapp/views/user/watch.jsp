@@ -344,7 +344,7 @@
         html += '            <span class="comment-author">' + userName + '</span>';
         html += '        </div>';
         html += '        <div class="comment-time-actions">';
-        html += '            <span class="comment-time">' + timeAgo + '</span>';
+
         if (canDelete) {
             html += '            <button type="button" class="comment-delete-btn" onclick="deleteComment(' + comment.id + ')">Xóa</button>';
         }
@@ -444,7 +444,6 @@
         }
     }
 
-    // ✅ PHƯƠNG THỨC MỚI: Xử lý xóa comment
     async function deleteComment(commentId) {
         if (!LOGGED_IN_USER_ID) {
             alert('Vui lòng đăng nhập để xóa bình luận của bạn.');
