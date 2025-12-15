@@ -67,6 +67,8 @@ public class AuthController extends HttpServlet {
 
                 if (errDB.isEmpty()) {
                     System.out.println("Register Success");
+                    resp.sendRedirect(req.getContextPath() + "/");
+                    return;
                 } else {
                     req.setAttribute("errDB", errDB);
                     System.out.println("Register Fail");

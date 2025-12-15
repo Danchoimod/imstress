@@ -65,22 +65,12 @@ line-height: 1;
 type="search" placeholder="Tìm kiếm phim, diễn viên" aria-label="Search">
       </form>
       <ul class="navbar-nav me-auto mb-2 mb-lg-0 align-items-center">
-        <li class="nav-item"><a class="nav-link text-white" href="#">Phim Lẻ</a></li>
-        <li class="nav-item"><a class="nav-link text-white" href="#">Phim Bộ</a></li>
+        <%-- ĐÃ XÓA MỤC "PHIM LẺ" VÀ "PHIM BỘ" TẠI ĐÂY --%>
 
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle text-white" href="#" id="theloaiDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Thể loại</a>
-          <ul class="dropdown-menu" aria-labelledby="theloaiDropdown" id="categoryDropdownList">
-            </ul>
-        </li>
+        <%-- Container cho các mục Category/Thể loại (tải bằng JS) --%>
+        <div id="categoryNavItems" class="d-flex"></div>
 
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle text-white" href="#" id="quocgiaDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Quốc gia</a>
-          <ul class="dropdown-menu" aria-labelledby="quocgiaDropdown" id="countryDropdownList">
-            </ul>
-        </li>
 
-        <li class="nav-item"><a class="nav-link text-white" href="#">Xem Chung</a></li>
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle text-white" href="#" id="themDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Thêm</a>
           <ul class="dropdown-menu" aria-labelledby="themDropdown">
@@ -113,11 +103,10 @@ type="search" placeholder="Tìm kiếm phim, diễn viên" aria-label="Search">
     const contextPath = '${pageContext.request.contextPath}';
     const API_BASE_URL = contextPath + "/api/category";
 
-    // Lấy các phần tử UL đã thêm ID
-    const categoryList = document.getElementById('categoryDropdownList');
-    const countryList = document.getElementById('countryDropdownList');
+    // CHỈ LẤY PHẦN TỬ CONTAINER CỦA CATEGORY
+    const categoryNavItems = document.getElementById('categoryNavItems');
 
-    // Hàm fetch và populate dropdown
+    // Hàm fetch và populate navbar
     async function fetchCategories() {
         try {
             const response = await fetch(API_BASE_URL);
@@ -133,36 +122,33 @@ type="search" placeholder="Tìm kiếm phim, diễn viên" aria-label="Search">
             }
 
             // Xóa nội dung cũ
-            categoryList.innerHTML = '';
-            countryList.innerHTML = '';
+            categoryNavItems.innerHTML = '';
 
             data.forEach(item => {
+                // Logic kiểm tra $ để loại bỏ các mục Quốc gia
+                const isCountry = item.name.startsWith('$');
+
+                // Nếu là Quốc gia (có dấu $), BỎ QUA không render
+                if (isCountry) {
+                    return; // Bỏ qua mục này
+                }
+
+                // Nếu không phải Quốc gia, tiến hành render mục Category
                 const listItem = document.createElement('li');
                 const link = document.createElement('a');
 
-                // Logic phân loại và làm sạch tên
-                // Kiểm tra xem tên có bắt đầu bằng '$' không
-                const isCountry = item.name.startsWith('$');
+                listItem.className = 'nav-item';
+                link.className = 'nav-link text-white';
 
-                // Loại bỏ ký tự '$' nếu có
-                const cleanName = isCountry ? item.name.substring(1).trim() : item.name;
+                // Tên
+                const cleanName = item.name.trim();
 
-                link.className = 'dropdown-item';
-
-                // 🚨 TẠO URL LỌC: Sử dụng nối chuỗi thuần JS (+)
-                // Ví dụ: /Java4SD20302/index?catId=1
+                // TẠO URL LỌC:
                 link.href = contextPath + "/category?catId=" + item.id;
-
                 link.textContent = cleanName;
 
                 listItem.appendChild(link);
-
-                // Phân loại: Nếu có '$' thì vào Quốc gia, ngược lại vào Thể loại
-                if (isCountry) {
-                    countryList.appendChild(listItem);
-                } else {
-                    categoryList.appendChild(listItem);
-                }
+                categoryNavItems.appendChild(listItem);
             });
 
         } catch (error) {

@@ -181,76 +181,75 @@ body {
 
 <script>
     // Biến toàn cục để lưu trữ danh sách video và danh mục
-    let allVideos = [];
-    let allCategories = [];
-    const bodyTable = document.getElementById("bodyTableVideo");
-    const contextPath = bodyTable.getAttribute("data-context-path");
-    const formTitle = document.getElementById("form-title");
-    const saveBtn = document.getElementById("saveBtn");
-    const videoIdInput = document.getElementById("videoId");
-    const categorySelect = document.getElementById("category");
-    const videoForm = document.getElementById("videoForm");
-
+    let allVideos = []; //
+    let allCategories = []; //
+    const bodyTable = document.getElementById("bodyTableVideo"); //
+    const contextPath = bodyTable.getAttribute("data-context-path"); //
+    const formTitle = document.getElementById("form-title"); //
+    const saveBtn = document.getElementById("saveBtn"); // [cite: 40]
+    const videoIdInput = document.getElementById("videoId"); // [cite: 40]
+    const categorySelect = document.getElementById("category"); // [cite: 40]
+    const videoForm = document.getElementById("videoForm"); // [cite: 40]
     // -------------------- CÁC BIẾN VÀ ELEMENT CHO CLOUDINARY --------------------
-    const cloudinaryCloudName = "dhdke5ku8"; // ⚠️ THAY THẾ BẰNG CLOUD NAME CỦA BẠN!
-    const cloudinaryUploadPreset = "unsigned_upload"; // ⚠️ THAY THẾ BẰNG UNSIGNED UPLOAD PRESET CỦA BẠN!
-    const posterInput = document.getElementById('poster');
-    const uploadWidgetBtn = document.getElementById('upload_widget');
-    const posterPreview = document.getElementById('poster-preview');
+    const cloudinaryCloudName = "dhdke5ku8"; // [cite: 41]
+    // ⚠️ THAY THẾ BẰNG CLOUD NAME CỦA BẠN!
+    const cloudinaryUploadPreset = "unsigned_upload"; // [cite: 42]
+    // ⚠️ THAY THẾ BẰNG UNSIGNED UPLOAD PRESET CỦA BẠN!
+    const posterInput = document.getElementById('poster'); // [cite: 43]
+    const uploadWidgetBtn = document.getElementById('upload_widget'); // [cite: 43]
+    const posterPreview = document.getElementById('poster-preview'); // [cite: 44]
     // -------------------- KẾT THÚC CLOUDINARY VARIABLES --------------------
 
     document.addEventListener('DOMContentLoaded', function() {
         // Khởi tạo: Lấy danh mục trước, sau đó lấy dữ liệu video
-        fetchCategories().then(getData);
+        fetchCategories().then(getData); // [cite: 47]
 
         // Setup form submit handler
-        setupFormSubmit();
+        setupFormSubmit(); // [cite: 44]
 
         // Setup Cloudinary Widget
-        setupCloudinaryWidget();
+        setupCloudinaryWidget(); // [cite: 44]
 
         // Nếu có lỗi validation từ Controller, hãy hiển thị lại form title
-        if (videoIdInput.value) {
-            formTitle.textContent = 'Cập nhật Video ID: ' + videoIdInput.value;
-            saveBtn.innerHTML = '<i class="fa-solid fa-pen-to-square me-2"></i> Cập nhật video';
+        if (videoIdInput.value) { // [cite: 45]
+            formTitle.textContent = 'Cập nhật Video ID: ' + videoIdInput.value; // [cite: 45]
+            saveBtn.innerHTML = '<i class="fa-solid fa-pen-to-square me-2"></i> Cập nhật video'; // [cite: 45]
         }
-    });
-
+    }); // [cite: 46]
     // -------------------- CÁC HÀM XỬ LÝ DANH MỤC --------------------
     async function fetchCategories() {
         try {
-            const res = await axios.get(contextPath + "/api/category");
-            allCategories = res.data;
-            renderCategories();
+            const res = await axios.get(contextPath + "/api/category"); // [cite: 47]
+            allCategories = res.data; // [cite: 47]
+            renderCategories(); // [cite: 47]
         } catch (error) {
-            console.error("Lỗi khi tải danh mục:", error);
-            categorySelect.innerHTML = '<option value="">Lỗi tải danh mục</option>';
+            console.error("Lỗi khi tải danh mục:", error); // [cite: 48]
+            categorySelect.innerHTML = '<option value="">Lỗi tải danh mục</option>'; // [cite: 48]
         }
     }
 
     function renderCategories() {
-        categorySelect.innerHTML = '<option value="">Chọn danh mục</option>';
-        allCategories.forEach(function(cat) {
+        categorySelect.innerHTML = '<option value="">Chọn danh mục</option>'; // [cite: 49]
+        allCategories.forEach(function(cat) { // [cite: 49]
             const option = document.createElement('option');
             option.value = cat.name;
             option.textContent = cat.name;
             categorySelect.appendChild(option);
-        });
-
+        }); // [cite: 49]
         // Nếu có bean.category từ server (sau post/validation), chọn lại danh mục đó
-        const preSelectedCategory = "${bean.category}";
-        if(preSelectedCategory) {
-            categorySelect.value = preSelectedCategory;
+        const preSelectedCategory = "${bean.category}"; // [cite: 50]
+        if(preSelectedCategory) { // [cite: 51]
+            categorySelect.value = preSelectedCategory; // [cite: 52]
         }
     }
 
     // -------------------- SETUP CLOUDINARY WIDGET --------------------
     function setupCloudinaryWidget() {
         if (!cloudinaryCloudName || !cloudinaryUploadPreset || cloudinaryCloudName === 'YOUR_CLOUDINARY_CLOUD_NAME') {
-             console.error("LỖI CẤU HÌNH CLOUDINARY: Vui lòng cập nhật Cloud Name và Upload Preset.");
-             uploadWidgetBtn.disabled = true;
-             uploadWidgetBtn.textContent = 'Lỗi cấu hình Cloudinary';
-             return;
+             console.error("LỖI CẤU HÌNH CLOUDINARY: Vui lòng cập nhật Cloud Name và Upload Preset."); // [cite: 53]
+             uploadWidgetBtn.disabled = true; // [cite: 53]
+             uploadWidgetBtn.textContent = 'Lỗi cấu hình Cloudinary'; // [cite: 53]
+             return; // [cite: 54]
         }
 
         const myWidget = cloudinary.createUploadWidget(
@@ -258,174 +257,229 @@ body {
                 cloudName: cloudinaryCloudName,
                 uploadPreset: cloudinaryUploadPreset,
                 // Cấu hình thêm (tùy chọn):
-                sources: [ 'local', 'url' ],
-                folder: 'video_posters',
-                clientAllowedFormats: ["png", "gif", "jpeg", "jpg"],
-                maxFileSize: 5000000 // Tối đa 5MB
+                sources: [ 'local', 'url' ], // [cite: 55]
+                folder: 'video_posters', // [cite: 55]
+                clientAllowedFormats: ["png", "gif", "jpeg", "jpg"], // [cite: 55]
+                maxFileSize: 5000000 // Tối đa 5MB // [cite: 55]
             },
             (error, result) => {
-                if (!error && result && result.event === "success") {
+                if (!error && result && result.event === "success") { // [cite: 56]
                     console.log('Done uploading! Here is the image info: ', result.info);
 
                     // Gán URL ảnh vào trường Poster và hiển thị xem trước
-                    const imageUrl = result.info.secure_url;
-                    posterInput.value = imageUrl;
-                    posterPreview.src = imageUrl;
-                    posterPreview.style.display = 'block';
+                    const imageUrl = result.info.secure_url; // [cite: 57]
+                    posterInput.value = imageUrl; // [cite: 57]
+                    posterPreview.src = imageUrl; // [cite: 57]
+                    posterPreview.style.display = 'block'; // [cite: 57]
 
-                    showAlert('success', 'Tải ảnh lên Cloudinary thành công!');
-                } else if (error) {
-                    console.error("Cloudinary upload error:", error);
-                    showAlert('danger', 'Lỗi khi tải ảnh lên Cloudinary.');
+                    showAlert('success', 'Tải ảnh lên Cloudinary thành công!'); // [cite: 58]
+                } else if (error) { // [cite: 58]
+                    console.error("Cloudinary upload error:", error); // [cite: 59]
+                    showAlert('danger', 'Lỗi khi tải ảnh lên Cloudinary.'); // [cite: 59]
                 }
             }
-        );
-
+        ); // [cite: 59]
         // Gán sự kiện cho nút bấm
-        uploadWidgetBtn.addEventListener("click", function(){
-            myWidget.open();
-        }, false);
+        uploadWidgetBtn.addEventListener("click", function(){ // [cite: 60]
+            myWidget.open(); // [cite: 60]
+        }, false); // [cite: 61]
     }
 
-    // -------------------- SETUP FORM SUBMIT --------------------
+    // -------------------- CÁC HÀM VALIDATION (MỚI) --------------------
+    function validateForm(title, url, poster, category) {
+        let isValid = true;
+
+        // 1. Reset lỗi trước
+        document.getElementById('title').classList.remove('is-invalid');
+        document.getElementById('url').classList.remove('is-invalid');
+        document.getElementById('category').classList.remove('is-invalid');
+        document.getElementById('titleError').textContent = '';
+        document.getElementById('urlError').textContent = '';
+        document.getElementById('categoryError').textContent = '';
+
+        // 2. Kiểm tra Tiêu đề (Bắt buộc)
+        if (!title) {
+            document.getElementById('title').classList.add('is-invalid');
+            document.getElementById('titleError').textContent = 'Vui lòng nhập tiêu đề video.';
+            isValid = false;
+        }
+
+        // 3. Kiểm tra URL (Bắt buộc)
+        if (!url) {
+            document.getElementById('url').classList.add('is-invalid');
+            document.getElementById('urlError').textContent = 'Vui lòng nhập URL video.';
+            isValid = false;
+        } else {
+            // 4. Kiểm tra định dạng URL là YouTube
+            // Regex cơ bản: chấp nhận các URL của youtube.com (kể cả youtu.be)
+            const youtubeRegex = /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/;
+            if (!youtubeRegex.test(url)) {
+                document.getElementById('url').classList.add('is-invalid');
+                document.getElementById('urlError').textContent = 'URL không hợp lệ. Vui lòng nhập URL từ YouTube (youtube.com/watch?v=... hoặc youtu.be/...).';
+                isValid = false;
+            }
+        }
+
+        // 5. Kiểm tra Danh mục (Bắt buộc)
+        if (!category) {
+            document.getElementById('category').classList.add('is-invalid');
+            document.getElementById('categoryError').textContent = 'Vui lòng chọn danh mục.';
+            isValid = false;
+        }
+
+        // 6. Kiểm tra Poster (Đã được kiểm tra trong setupFormSubmit, nhưng thêm lại để đồng bộ)
+        if (!poster) {
+            // Lỗi này được xử lý bằng showAlert ở hàm submit
+            isValid = false;
+        }
+
+        return isValid;
+    }
+
+    // -------------------- SETUP FORM SUBMIT (CẬP NHẬT ĐỂ TÍCH HỢP VALIDATION) --------------------
     function setupFormSubmit() {
         videoForm.addEventListener('submit', async function(e) {
             e.preventDefault();
 
             const videoId = videoIdInput.value;
-            const title = document.getElementById('title').value.trim();
+            const title = document.getElementById('title').value.trim(); // [cite: 62]
             const url = document.getElementById('url').value.trim();
-            const poster = posterInput.value.trim(); // Lấy giá trị từ trường poster
+            const poster = posterInput.value.trim(); // Lấy giá trị từ trường poster [cite: 62]
             const category = categorySelect.value;
             const description = document.getElementById('description').value.trim();
 
-            // RẤT QUAN TRỌNG: Kiểm tra xem poster đã được tải lên chưa
+            // 1. Kiểm tra Poster (Thumbnail) trước
             if (!poster) {
-                showAlert('danger', 'Vui lòng tải lên ảnh Poster (Thumbnail) trước khi lưu.');
+                showAlert('danger', 'Vui lòng tải lên ảnh Poster (Thumbnail) trước khi lưu.'); // [cite: 63]
+                return; // [cite: 63]
+            }
+
+            // 2. Kiểm tra Validation cho các trường còn lại
+            if (!validateForm(title, url, poster, category)) {
                 return;
             }
 
             try {
                 const params = new URLSearchParams();
-                params.append('title', title);
-                params.append('url', url);
-                params.append('poster', poster);
-                params.append('category', category);
-                params.append('description', description);
-                if (videoId) {
-                    params.append('videoId', videoId);
+                params.append('title', title); // [cite: 64]
+                params.append('url', url); // [cite: 64]
+                params.append('poster', poster); // [cite: 64]
+                params.append('category', category); // [cite: 64]
+                params.append('description', description); // [cite: 64]
+                if (videoId) { // [cite: 65]
+                    params.append('videoId', videoId); // [cite: 65]
                 }
 
                 const response = await axios.post(
-                    contextPath + '/api/admin/videos',
-                    params.toString(),
+                    contextPath + '/api/admin/videos', // [cite: 65]
+                    params.toString(), // [cite: 65]
                     {
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded'
+                        headers: { // [cite: 66]
+                            'Content-Type': 'application/x-www-form-urlencoded' // [cite: 66]
                         }
                     }
-                );
-
-                if (response.data.status === 'success') {
-                    showAlert('success', response.data.message);
-                    resetForm();
-                    getData();
+                ); // [cite: 67]
+                if (response.data.status === 'success') { // [cite: 67]
+                    showAlert('success', response.data.message); // [cite: 67]
+                    resetForm(); // [cite: 68]
+                    getData(); // [cite: 68]
                 } else {
-                    showAlert('danger', response.data.message);
+                    showAlert('danger', response.data.message); // [cite: 69]
                 }
             } catch (error) {
-                console.error('Error submitting form:', error);
+                console.error('Error submitting form:', error); // [cite: 70]
                 const errorMessage = error.response && error.response.data && error.response.data.message
-                    ? error.response.data.message
-                    : 'Có lỗi xảy ra khi xử lý yêu cầu';
-                showAlert('danger', errorMessage);
+                    ? error.response.data.message // [cite: 71]
+                    : 'Có lỗi xảy ra khi xử lý yêu cầu'; // [cite: 72]
+                showAlert('danger', errorMessage); // [cite: 72]
             }
-        });
+        }); // [cite: 73]
     }
 
     // -------------------- CÁC HÀM XỬ LÝ VIDEO --------------------
 
     function getData() {
-        axios.get(contextPath + "/api/admin/videos")
+        axios.get(contextPath + "/api/admin/videos") // [cite: 74]
         .then(function(res) {
-            allVideos = res.data;
-            const arrayHtml = allVideos.map(function(element) {
-                const posterImg = element.poster ? element.poster : 'placeholder.jpg';
+            allVideos = res.data; // [cite: 74]
+            const arrayHtml = allVideos.map(function(element) { // [cite: 74]
+                const posterImg = element.poster ? element.poster : 'placeholder.jpg'; // [cite: 74]
 
-                return "<tr>" +
-                    "<td>" + element.id + "</td>" +
-                    "<td>" + escapeHtml(element.title) + "</td>" +
-                    "<td>" + escapeHtml(element.authName) + "</td>" +
-                    "<td><a href='" + escapeHtml(element.url) + "' target='_blank'>Link</a></td>" +
-                    "<td><span class='badge bg-info'>" + escapeHtml(element.catName) + "</span></td>" +
-                    "<td>" + element.createAt + "</td>" +
-                    "<td>" + element.viewCount + "</td>" +
-                    "<td><span class='badge bg-success'>" + (element.status === 1 ? 'Active' : 'Inactive') + "</span></td>" +
+                return "<tr>" + // [cite: 74]
+                    "<td>" + element.id + "</td>" + // [cite: 74]
+                    "<td>" + escapeHtml(element.title) + "</td>" + // [cite: 74]
+                    "<td>" + escapeHtml(element.authName) + "</td>" + // [cite: 74, 75]
+                    "<td><a href='" + escapeHtml(element.url) + "' target='_blank'>Link</a></td>" + // [cite: 75]
+                    "<td><span class='badge bg-info'>" + escapeHtml(element.catName) + "</span></td>" + // [cite: 75]
+                    "<td>" + element.createAt + "</td>" + // [cite: 75]
+                    "<td>" + element.viewCount + "</td>" + // [cite: 75]
+                    "<td><span class='badge bg-success'>" + (element.status === 1 ? // [cite: 76]
+                    'Active' : 'Inactive') + "</span></td>" + // [cite: 77]
                     "<td>" +
-                        "<button type='button' class='btn btn-sm btn-warning me-1' onclick='editVideo(" + element.id + ")' title='Sửa'>" +
-                            "<i class='fa-solid fa-pen-to-square'></i>" +
-                        "</button>" +
-                        "<button type='button' class='btn btn-sm btn-danger' onclick='deleteVideo(" + element.id + ")' title='Xoá video'>" +
-                            "<i class='fa-solid fa-trash'></i>" +
-                        "</button>" +
-                    "</td>" +
-                "</tr>";
+                        "<button type='button' class='btn btn-sm btn-warning me-1' onclick='editVideo(" + element.id + ")' title='Sửa'>" + // [cite: 77]
+                            "<i class='fa-solid fa-pen-to-square'></i>" + // [cite: 77]
+                        "</button>" + // [cite: 78]
+                        "<button type='button' class='btn btn-sm btn-danger' onclick='deleteVideo(" + element.id + ")' title='Xoá video'>" + // [cite: 78]
+                            "<i class='fa-solid fa-trash'></i>" + // [cite: 79]
+                        "</button>" + // [cite: 79]
+                    "</td>" + // [cite: 79]
+                "</tr>"; // [cite: 80]
             });
-            bodyTable.innerHTML = arrayHtml.join("");
+            bodyTable.innerHTML = arrayHtml.join(""); // [cite: 80]
         })
         .catch(function(error) {
             console.error("Lỗi khi tải dữ liệu:", error);
             bodyTable.innerHTML = "<tr><td colspan='9' class='text-center text-danger'>Không thể tải danh sách video. Vui lòng kiểm tra API.</td></tr>";
-        });
+        }); // [cite: 81]
     }
 
     // Hàm điền dữ liệu vào form để chỉnh sửa
     function editVideo(id) {
-        const video = allVideos.find(function(v) { return v.id === id; });
-        if (!video) return;
+        const video = allVideos.find(function(v) { return v.id === id; }); // [cite: 82]
+        if (!video) return; // [cite: 82]
 
         // 1. Điền dữ liệu vào form
-        videoIdInput.value = video.id;
-        document.getElementById("title").value = video.title;
-        document.getElementById("url").value = video.url;
-        posterInput.value = video.poster; // Điền URL poster đã có
-        document.getElementById("description").value = video.desc;
-
+        videoIdInput.value = video.id; // [cite: 83]
+        document.getElementById("title").value = video.title; // [cite: 83]
+        document.getElementById("url").value = video.url; // [cite: 83]
+        posterInput.value = video.poster; // Điền URL poster đã có [cite: 83]
+        document.getElementById("description").value = video.desc; // [cite: 83]
         // HIỂN THỊ ẢNH XEM TRƯỚC
-        if (video.poster) {
-            posterPreview.src = video.poster;
-            posterPreview.style.display = 'block';
+        if (video.poster) { // [cite: 84]
+            posterPreview.src = video.poster; // [cite: 85]
+            posterPreview.style.display = 'block'; // [cite: 85]
         } else {
-            posterPreview.src = '';
-            posterPreview.style.display = 'none';
+            posterPreview.src = ''; // [cite: 86]
+            posterPreview.style.display = 'none'; // [cite: 86]
         }
 
         // 2. Chọn lại danh mục
-        categorySelect.value = video.catName;
-
+        categorySelect.value = video.catName; // [cite: 87]
         // 3. Cập nhật tiêu đề form và nút bấm
-        formTitle.textContent = 'Cập nhật Video ID: ' + video.id;
-        saveBtn.innerHTML = '<i class="fa-solid fa-pen-to-square me-2"></i> Cập nhật video';
+        formTitle.textContent = 'Cập nhật Video ID: ' + video.id; // [cite: 88]
+        saveBtn.innerHTML = '<i class="fa-solid fa-pen-to-square me-2"></i> Cập nhật video'; // [cite: 88]
 
         // 4. Scroll lên đầu form
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.scrollTo({ top: 0, behavior: 'smooth' }); // [cite: 89]
     }
 
-    // Hàm xóa dữ liệu form và chuyển về chế độ Thêm mới
+    // Hàm xóa dữ liệu form và chuyển về chế độ Thêm mới (CẬP NHẬT ĐỂ XÓA LỖI)
     function resetForm() {
-        videoForm.reset();
-        videoIdInput.value = "";
-        formTitle.textContent = "Thêm Video Mới";
-        saveBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up me-2"></i> Lưu video';
-
+        videoForm.reset(); // [cite: 90]
+        videoIdInput.value = ""; // [cite: 90]
+        formTitle.textContent = "Thêm Video Mới"; // [cite: 90]
+        saveBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up me-2"></i> Lưu video'; // [cite: 90]
         // Ẩn ảnh xem trước khi reset form
-        posterPreview.src = '';
-        posterPreview.style.display = 'none';
+        posterPreview.src = ''; // [cite: 91]
+        posterPreview.style.display = 'none'; // [cite: 92]
 
-        // Xóa các class is-invalid
-        document.querySelectorAll('.is-invalid').forEach(function(el) {
-            el.classList.remove('is-invalid');
+        // Xóa các class is-invalid và nội dung lỗi
+        document.querySelectorAll('.is-invalid').forEach(function(el) { // [cite: 92]
+            el.classList.remove('is-invalid'); // [cite: 93]
         });
+        document.getElementById('titleError').textContent = '';
+        document.getElementById('urlError').textContent = '';
+        document.getElementById('categoryError').textContent = '';
     }
 
     // ==================== HÀM XÓA VIDEO ĐÃ ĐƯỢC SỬA CẤU TRÚC ====================
@@ -433,50 +487,48 @@ body {
         if (confirm("Bạn có chắc chắn muốn xóa video này không?")) {
             try {
                 const params = new URLSearchParams();
-                params.append("videoId", id);
-                params.append("action", "delete"); // <-- THÊM THAM SỐ action MỚI
+                params.append("videoId", id); // [cite: 94]
+                params.append("action", "delete"); // <-- THÊM THAM SỐ action MỚI [cite: 94]
 
                 const response = await axios.post(
-                    contextPath + "/api/admin/videos", // <-- SỬA ENDPOINT CHUNG
-                    params.toString(),
+                    contextPath + "/api/admin/videos", // <-- SỬA ENDPOINT CHUNG [cite: 95]
+                    params.toString(), // [cite: 95]
                     {
-                        headers: {
-                            "Content-Type": "application/x-www-form-urlencoded"
+                        headers: { // [cite: 95]
+                            "Content-Type": "application/x-www-form-urlencoded" // [cite: 95]
                         }
                     }
-                );
+                ); // [cite: 96]
 
-                const res = response.data;
-
-                if (res.status === true) {
-                    showAlert('success', res.message);
-                    getData(); // Tải lại dữ liệu sau khi xóa thành công
+                const res = response.data; // [cite: 97]
+                if (res.status === true) { // [cite: 97]
+                    showAlert('success', res.message); // [cite: 97]
+                    getData(); // Tải lại dữ liệu sau khi xóa thành công [cite: 98]
                 } else {
-                    showAlert('danger', 'Lỗi xóa video: ' + res.message);
+                    showAlert('danger', 'Lỗi xóa video: ' + res.message); // [cite: 99]
                 }
 
             } catch (e) {
-                console.error("Lỗi hệ thống khi xóa:", e);
-                showAlert('danger', 'Lỗi hệ thống: Không thể kết nối hoặc xử lý yêu cầu xóa.');
-            }
+                console.error("Lỗi hệ thống khi xóa:", e); // [cite: 99]
+                showAlert('danger', 'Lỗi hệ thống: Không thể kết nối hoặc xử lý yêu cầu xóa.'); // [cite: 100]
+            } // [cite: 101]
         }
     }
 
     // ==================== ALERT HELPER ====================
     function showAlert(type, message) {
-        const alertDiv = document.createElement('div');
-        alertDiv.className = 'alert alert-' + type + ' alert-dismissible fade show';
-        alertDiv.role = 'alert';
-        alertDiv.innerHTML = escapeHtml(message) +
-            '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
-
-        const container = document.querySelector('.container-fluid');
+        const alertDiv = document.createElement('div'); // [cite: 102]
+        alertDiv.className = 'alert alert-' + type + ' alert-dismissible fade show'; // [cite: 102]
+        alertDiv.role = 'alert'; // [cite: 103]
+        alertDiv.innerHTML = escapeHtml(message) + // [cite: 103]
+            '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>'; // [cite: 104]
+        const container = document.querySelector('.container-fluid'); // [cite: 104]
         // Tìm div cha của form để chèn thông báo ngay sau main-header
-        const targetElement = document.querySelector('.main-header').nextElementSibling;
-        if (targetElement) {
-             targetElement.insertAdjacentElement('afterbegin', alertDiv);
+        const targetElement = document.querySelector('.main-header').nextElementSibling; // [cite: 104, 105]
+        if (targetElement) { // [cite: 105]
+             targetElement.insertAdjacentElement('afterbegin', alertDiv); // [cite: 106]
         } else {
-             container.insertBefore(alertDiv, container.firstChild);
+             container.insertBefore(alertDiv, container.firstChild); // [cite: 107]
         }
 
         // Auto dismiss after 5 seconds
@@ -485,20 +537,20 @@ body {
             if (alertDiv.parentElement) {
                 alertDiv.remove();
             }
-        }, 5000);
+        }, 5000); // [cite: 108]
     }
 
     // ==================== HTML ESCAPE ====================
     function escapeHtml(text) {
-        if (!text) return '';
-        const map = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#039;'
+        if (!text) return ''; // [cite: 109]
+        const map = { // [cite: 109]
+            '&': '&amp;', //
+            '<': '&lt;', //
+            '>': '&gt;', //
+            '"': '&quot;', //
+            "'": '&#039;' //
         };
-        return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
+        return String(text).replace(/[&<>"']/g, function(m) { return map[m]; }); //
     }
 </script>
 </body>

@@ -30,6 +30,23 @@ public class CategoryServices{
         }
         return categories;
     }
+    public static List<Category> getAlluser(){
+        List<Category> categories = new ArrayList<>();
+        EntityManager manager = JPAUtils.getEntityManager();
+        try {
+            // Sửa: Lấy tất cả, bao gồm cả cột 'status' nếu nó tồn tại trong DB
+            String sql = "Select *from categories where status = 1";
+            Query query = manager.createNativeQuery(sql, Category.class);
+            categories = query.getResultList();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally { // Thêm finally để đảm bảo manager được đóng
+            if (manager != null) {
+                manager.close();
+            }
+        }
+        return categories;
+    }
 
     public static String addCategory(Category category){ //giá trị trả về dạng chuỗi
         EntityManager manager = JPAUtils.getEntityManager();

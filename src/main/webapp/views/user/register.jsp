@@ -121,7 +121,7 @@ body {
                 </div>
                 <form method="POST" action="${pageContext.request.contextPath}/auth/register">
                  <div class="mb-3">
-                     <label class="form-label">Tên đăng nhập</label>
+                     <label class="form-label">Tên Hiển thị </label>
                      <input value="${bean.username}" name="username" type="text" class="form-control" placeholder="Tên đăng nhập">
                      <small class="text-danger">${bean.errors.errUsername}</small>
                  </div>

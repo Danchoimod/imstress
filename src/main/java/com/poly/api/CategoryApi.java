@@ -44,7 +44,7 @@ public class CategoryApi extends HttpServlet {
         if(path.equals("/api/category")){
             try{
                 resp.setContentType("application/json; charset=UTF-8");
-                List<Category> videos = CategoryServices.getAll(); // lấy enity
+                List<Category> videos = CategoryServices.getAlluser(); // lấy enity
                 //ánh xạ .
                 for (Category entity : videos) {
                     CategoryReponse response = new CategoryReponse();

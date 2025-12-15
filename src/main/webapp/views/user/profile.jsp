@@ -189,7 +189,7 @@
                                     </div>
 
                                     <div class="mb-4">
-                                        <label for="displayName" class="form-label">Tên hiển thị (Username)</label>
+                                        <label for="displayName" class="form-label">Tên hiển thị</label>
                                         <div class="user-id">ID:
                                             <span id="userIdSpan">0000</span>
                                             <input type="hidden" name="userId" id="userIdInput" value="0000">
