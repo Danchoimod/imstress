@@ -216,6 +216,7 @@
             const text = document.getElementById('favorite-text');
 
             if (!btn || !icon) return;
+
             if (isFavorited) {
                 btn.classList.remove('btn-outline-light');
                 btn.classList.add('btn-primary');
@@ -247,9 +248,18 @@
                 });
 
                 const result = response.data;
-
                 alert(result.message);
-                updateFavoriteButton(result.action === 'favorited');
+
+                // SAU KHI TOGGLE, CHECK LẠI TRẠNG THÁI TỪ SERVER
+                try {
+                    const favResponse = await axios.get(FAV_API_URL);
+                    const favList = favResponse.data;
+                    const isFavorited = favList.some(video => video.id == videoId);
+                    updateFavoriteButton(isFavorited);
+                    console.log("Trạng thái yêu thích sau toggle:", isFavorited);
+                } catch (e) {
+                    console.warn("Không thể cập nhật trạng thái button:", e);
+                }
 
             } catch (error) {
                 console.error("Lỗi toggle favorite:", error);
@@ -266,8 +276,6 @@
                 favoriteBtn.disabled = false;
             }
         }
-
-        // ==================== TÍNH NĂNG CHIA SẺ ====================
 
         // Hàm chia sẻ phim
         function shareMovie(movie) {
@@ -512,13 +520,23 @@
                 }
 
                 console.log("User ID from API:", userId);
+                console.log("Is Logged In:", isLoggedIn);
 
                 if (isLoggedIn) {
                     // 3. CHECK TRẠNG THÁI FAVORITE
                     try {
-                        const favResponse = await axios.get(`${FAV_API_URL}?videoId=${videoId}`);
-                        const favStatus = favResponse.data;
-                        updateFavoriteButton(favStatus.isFavorited);
+                        const favResponse = await axios.get(FAV_API_URL);
+                        const favList = favResponse.data; // Mảng các video đã thích
+
+                        console.log("Danh sách yêu thích:", favList);
+
+                        // Kiểm tra xem videoId hiện tại có trong danh sách yêu thích không
+                        const isFavorited = favList.some(video => video.id == videoId);
+
+                        console.log("Video ID hiện tại:", videoId);
+                        console.log("Trạng thái yêu thích:", isFavorited);
+
+                        updateFavoriteButton(isFavorited);
                     } catch (e) {
                         updateFavoriteButton(false);
                         console.warn("Lỗi khi check trạng thái yêu thích:", e.response ? e.response.status : e.message);

@@ -24,9 +24,6 @@ public class UserServices {
 
             List<User> UserDB = query.getResultList();
             for (User item:UserDB){
-                if (item.getUsername().equals(user.getUsername())){
-                    errorMap.put("errUsername","người dùng đã tồn tại");
-                }
                 if (item.getEmail().equals(user.getEmail())){
                     errorMap.put("errEmail","email đã tồn tại");
                 }
@@ -165,7 +162,7 @@ public class UserServices {
             if (!transaction.isActive()) {
                 transaction.begin();
             }
-
+            existingUser.setUsername(updatedUser.getUsername());
             existingUser.setName(updatedUser.getName());
             existingUser.setPhone(updatedUser.getPhone());
             existingUser.setEmail(updatedUser.getEmail());

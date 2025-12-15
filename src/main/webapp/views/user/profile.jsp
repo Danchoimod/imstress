@@ -213,8 +213,6 @@
                                 <input type="hidden" name="userId" id="userIdInput" value="0000">
                             </div>
                             <input type="text" class="form-control" id="displayName" name="displayName" value=""
-                                readonly title="Tên hiển thị (Username) không thể thay đổi">
-                            <small class="text-muted">Username được dùng cho bình luận và đăng nhập, không thể thay đổi.</small>
                         </div>
                         <div class="mb-4">
                             <label for="fullname" class="form-label">Họ và tên </label>
@@ -323,7 +321,7 @@
             const saveButton = document.getElementById('saveProfileBtn');
             saveButton.disabled = true;
             let isValid = true;
-
+            const username = document.getElementById('displayName');
             // Lấy giá trị input
             const fullNameInput = document.getElementById('fullname');
             const phoneInput = document.getElementById('phone');
@@ -361,6 +359,7 @@
             const updatedData = {
                 id: parseInt(document.getElementById('userIdInput').value),
                 name: fullName,
+                username:document.getElementById('displayName').value,
                 email: document.getElementById('emailDisplay').textContent,
                 phone: phone,
             };
