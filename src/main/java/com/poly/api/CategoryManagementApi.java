@@ -44,6 +44,8 @@ public class CategoryManagementApi extends HttpServlet {
     )
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         try {
+                    req.setCharacterEncoding("UTF-8");
+                            resp.setContentType("text/html; charset=UTF-8");
             List<Category> categories = CategoryServices.getAll();
             List<Map<String, Object>> responses = new ArrayList<>();
 
@@ -89,6 +91,7 @@ public class CategoryManagementApi extends HttpServlet {
     )
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setCharacterEncoding("UTF-8");
+        resp.setContentType("text/html; charset=UTF-8");
         String action = req.getParameter("action");
         String idParam = req.getParameter("id");
 
@@ -107,6 +110,8 @@ public class CategoryManagementApi extends HttpServlet {
 
     private void addOrUpdateCategory(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
+            req.setCharacterEncoding("UTF-8");
+            resp.setContentType("text/html; charset=UTF-8");
             com.poly.beans.CategoryBean bean = new com.poly.beans.CategoryBean();
             BeanUtils.populate(bean, req.getParameterMap());
 

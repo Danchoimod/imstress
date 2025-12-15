@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-// SỬA LỖI CẤU TRÚC: Chỉ định một endpoint duy nhất
 @WebServlet(urlPatterns = {"/api/admin/videos"})
 public class VideoManagementApi extends HttpServlet {
     private final Gson gson = new GsonBuilder().serializeNulls().create();
@@ -34,15 +33,8 @@ public class VideoManagementApi extends HttpServlet {
         resp.getWriter().println(gson.toJson(data));
     }
 
-    // GET: Lấy danh sách tất cả video với thông tin đầy đủ
+    // GET: Lấy danh sách tất cả video
     @Override
-    @Operation(
-            summary = "Lấy danh sách tất cả video",
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "Thành công"),
-                    @ApiResponse(responseCode = "500", description = "Lỗi Server")
-            }
-    )
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         try {
             List<Video> videos = VideoServices.getAllVideo();
@@ -59,7 +51,6 @@ public class VideoManagementApi extends HttpServlet {
                 responseMap.put("viewCount", video.getViewCount());
                 responseMap.put("status", video.getStatus());
 
-                // Thông tin category
                 if (video.getCategory() != null) {
                     responseMap.put("catId", video.getCategory().getId());
                     responseMap.put("catName", video.getCategory().getName());
@@ -68,7 +59,6 @@ public class VideoManagementApi extends HttpServlet {
                     responseMap.put("catName", "Không có");
                 }
 
-                // Thông tin user/author
                 if (video.getUser() != null) {
                     responseMap.put("authId", video.getUser().getId());
                     responseMap.put("authName", video.getUser().getName());
@@ -89,43 +79,73 @@ public class VideoManagementApi extends HttpServlet {
         }
     }
 
-    // POST: Xử lý Thêm mới và Cập nhật video hoặc Xóa video
+    // POST: Xử lý Thêm, Sửa, Xóa, Ẩn/Hiện
     @Override
-    @Operation(
-            summary = "Thêm mới, cập nhật hoặc xóa video",
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "Thành công"),
-                    @ApiResponse(responseCode = "400", description = "Sai tham số"),
-                    @ApiResponse(responseCode = "500", description = "Lỗi Server")
-            }
-    )
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setCharacterEncoding("UTF-8");
-        // String path = req.getServletPath(); // KHÔNG DÙNG path nữa
+        resp.setContentType("text/html; charset=UTF-8");
 
-        // SỬA LỖI CẤU TRÚC: Lấy tham số 'action'
+        // Lấy tham số action để phân loại hành động
         String action = req.getParameter("action");
 
-        if ("delete".equalsIgnoreCase(action)) { // Kiểm tra action
+        if ("delete".equalsIgnoreCase(action)) {
             deleteVideo(req, resp);
+        } else if ("toggle".equalsIgnoreCase(action)) { // <--- THÊM MỚI: Xử lý ẩn/hiện
+            toggleVideoStatus(req, resp);
         } else {
             addOrUpdateVideo(req, resp);
         }
     }
 
-    private void addOrUpdateVideo(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    // Phương thức xử lý ẩn/hiện video (THÊM MỚI)
+    private void toggleVideoStatus(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
-            // Lấy userId từ session hoặc dùng user mặc định nếu chưa đăng nhập
+            int videoId = Integer.parseInt(req.getParameter("videoId"));
+            int status = Integer.parseInt(req.getParameter("status")); // 0: Ẩn, 1: Hiện
+
             HttpSession session = req.getSession();
             User currentUser = (User) session.getAttribute("user");
+            int userId = (currentUser != null) ? currentUser.getId() : 1;
 
-            // Nếu không có user trong session, sử dụng userId mặc định = 1
-            int userId = 1;
-            if (currentUser != null) {
-                userId = currentUser.getId();
+            // Tìm video theo ID (Giả sử VideoServices có hàm findById)
+            Video video = VideoServices.findById(videoId);
+
+            if (video != null) {
+                video.setStatus(status);
+                // Cập nhật lại video. Lưu ý lấy categoryId từ video cũ để không bị null
+                int catId = (video.getCategory() != null) ? video.getCategory().getId() : 1;
+
+                String errorMsg = VideoServices.updateVideo(video, userId, catId);
+
+                if (errorMsg == null) {
+                    Map<String, Object> result = new HashMap<>();
+                    result.put("status", "success");
+                    result.put("message", "Đã " + (status == 1 ? "hiện" : "ẩn") + " video thành công!");
+                    sendJson(resp, HttpServletResponse.SC_OK, result);
+                } else {
+                    Map<String, String> error = new HashMap<>();
+                    error.put("message", errorMsg);
+                    sendJson(resp, HttpServletResponse.SC_BAD_REQUEST, error);
+                }
+            } else {
+                Map<String, String> error = new HashMap<>();
+                error.put("message", "Video không tồn tại!");
+                sendJson(resp, HttpServletResponse.SC_NOT_FOUND, error);
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Map<String, String> error = new HashMap<>();
+            error.put("message", "Lỗi xử lý: " + e.getMessage());
+            sendJson(resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, error);
+        }
+    }
 
-            // Lấy tham số trực tiếp từ request - KHÔNG VALIDATION
+    private void addOrUpdateVideo(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        try {
+            HttpSession session = req.getSession();
+            User currentUser = (User) session.getAttribute("user");
+            int userId = (currentUser != null) ? currentUser.getId() : 1;
+
             String title = req.getParameter("title");
             String url = req.getParameter("url");
             String poster = req.getParameter("poster");
@@ -133,7 +153,6 @@ public class VideoManagementApi extends HttpServlet {
             String description = req.getParameter("description");
             String videoIdParam = req.getParameter("videoId");
 
-            // Lấy category
             Category category = CategoryServices.getCategoryByName(categoryName);
             if (category == null) {
                 Map<String, Object> result = new HashMap<>();
@@ -148,16 +167,15 @@ public class VideoManagementApi extends HttpServlet {
             video.setDesc(description);
             video.setPoster(poster);
             video.setUrl(url);
-            video.setStatus(1); // Active
+            video.setStatus(1); // Mặc định Active khi thêm mới
 
             String errorMsg;
 
             if (videoIdParam != null && !videoIdParam.isEmpty()) {
-                // Update Logic
                 video.setId(Integer.parseInt(videoIdParam));
+                // Khi update ở form, vẫn giữ logic cũ
                 errorMsg = VideoServices.updateVideo(video, userId, category.getId());
             } else {
-                // Add Logic
                 video.setCreateAt(new Date(System.currentTimeMillis()));
                 video.setViewCount(0);
                 errorMsg = VideoServices.addVideo(video, userId, category.getId());
@@ -179,13 +197,12 @@ public class VideoManagementApi extends HttpServlet {
         } catch (Exception e) {
             e.printStackTrace();
             Map<String, String> error = new HashMap<>();
-            error.put("error", "Lỗi server trong quá trình thêm/sửa video: " + e.getMessage());
+            error.put("error", "Lỗi server: " + e.getMessage());
             sendJson(resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, error);
         }
     }
 
     private void deleteVideo(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        // NOTE: Logic xóa này vẫn giữ nguyên, nhưng nó được gọi bằng action=delete
         String videoIdParam = req.getParameter("videoId");
 
         if (videoIdParam == null || videoIdParam.isEmpty()) {
@@ -198,17 +215,10 @@ public class VideoManagementApi extends HttpServlet {
 
         try {
             int videoId = Integer.parseInt(videoIdParam);
-
-            // Lấy userId từ session hoặc dùng user mặc định nếu chưa đăng nhập
             HttpSession session = req.getSession();
             User currentUser = (User) session.getAttribute("user");
+            int userId = (currentUser != null) ? currentUser.getId() : 1;
 
-            int userId = 1;
-            if (currentUser != null) {
-                userId = currentUser.getId();
-            }
-
-            // Thực hiện xóa
             String errorMsg = VideoServices.deleteVideo(videoId, userId);
 
             if (errorMsg == null) {
@@ -223,16 +233,11 @@ public class VideoManagementApi extends HttpServlet {
                 sendJson(resp, HttpServletResponse.SC_BAD_REQUEST, result);
             }
 
-        } catch (NumberFormatException e) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("status", false);
-            error.put("message", "videoId không hợp lệ");
-            sendJson(resp, HttpServletResponse.SC_BAD_REQUEST, error);
         } catch (Exception e) {
             e.printStackTrace();
             Map<String, Object> error = new HashMap<>();
             error.put("status", false);
-            error.put("message", "Lỗi server trong quá trình xóa: " + e.getMessage());
+            error.put("message", "Lỗi server: " + e.getMessage());
             sendJson(resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, error);
         }
     }

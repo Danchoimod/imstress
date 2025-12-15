@@ -115,6 +115,19 @@ public class VideoServices {
 		manager.close();
 		return null;
 	}
+	public static Video findById(int id) {
+		EntityManager manager = JPAUtils.getEntityManager();
+		try {
+			return manager.find(Video.class, id);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		} finally {
+			if (manager != null && manager.isOpen()) {
+				manager.close();
+			}
+		}
+	}
 
 	public static String deleteVideo(int videoId, int userId) {
 		EntityManagerFactory managerFactory = Persistence.createEntityManagerFactory("dbConnect");

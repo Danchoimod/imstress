@@ -17,6 +17,8 @@ public class AdminCategoriesController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         // FIX QUAN TRỌNG: Khởi tạo CategoryBean nếu chưa tồn tại
+        req.setCharacterEncoding("UTF-8");
+        resp.setContentType("text/html; charset=UTF-8");
         // Điều này ngăn chặn lỗi NullPointerException khi JSP truy cập ${bean.xyz}
         if (req.getAttribute("bean") == null) {
             req.setAttribute("bean", new CategoryBean());
