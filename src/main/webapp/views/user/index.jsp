@@ -152,7 +152,7 @@
 
     <div class="main-container">
 
-        <h2 class="section-title">Phim đề xuất</h2>
+        <h2 class="section-title">Tất cả</h2>
         <div class="movie-grid" id="recommended-movies-grid">
             <!-- Movies will be loaded here -->
         </div>

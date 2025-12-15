@@ -152,7 +152,7 @@
 
     <div class="main-container">
 
-        <h2 class="section-title">Phim đề xuất</h2>
+        <h2 id="tieude" class="section-title">đề xuất</h2>
         <div class="movie-grid" id="recommended-movies-grid">
             <!-- Movies will be loaded here -->
         </div>
@@ -172,7 +172,6 @@
             // Sửa lỗi: Đảm bảo sử dụng đúng tên thuộc tính từ API
             const displayDate = movie.createAt || 'N/A';
             const displayRating = (Math.random() * (9.5 - 8.5) + 8.5).toFixed(1); // Tạo rating ngẫu nhiên 8.5 - 9.5
-
             // Sử dụng template literal với cú pháp đúng
             return `
                 <div class="movie-card" data-movie-id="\${movie.id}">
