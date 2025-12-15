@@ -123,10 +123,10 @@
             gap: 1rem;
         }
 
-        .comment-actions {
+        .comment-time-actions {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.75rem;
         }
 
         .comment-delete-btn {
@@ -134,8 +134,9 @@
             border: none;
             color: #ff6b6b;
             cursor: pointer;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             padding: 0.2rem 0.4rem;
+            transition: color 0.2s;
         }
 
         .comment-delete-btn:hover {
@@ -259,6 +260,11 @@
     const COMMENT_API_URL = "${pageContext.request.contextPath}/api/comment";
     const USER_INFO_API_URL = "${pageContext.request.contextPath}/api/userinfo";
 
+    console.log('API URLs initialized:');
+    console.log('VIDEO_API_URL:', VIDEO_API_URL);
+    console.log('COMMENT_API_URL:', COMMENT_API_URL);
+    console.log('USER_INFO_API_URL:', USER_INFO_API_URL);
+
     const iframe = document.getElementById("video-frame");
 
     let LOGGED_IN_USER_ID = null;
@@ -334,18 +340,15 @@
         let html = '';
         html += '<div class="comment-item">';
         html += '    <div class="comment-header">';
-        html += '        <div class="comment-actions">';
+        html += '        <div>';
         html += '            <span class="comment-author">' + userName + '</span>';
+        html += '        </div>';
+        html += '        <div class="comment-time-actions">';
+        html += '            <span class="comment-time">' + timeAgo + '</span>';
         if (canDelete) {
-            // ✅ THÊM NÚT XÓA KÈM onclick
-            html += '    <div class="comment-actions">';
-            html += '        <button type="button" class="comment-delete-btn" onclick="deleteComment(' + comment.id + ')">';
-            html += '            <i class="bi bi-trash"></i> Xóa';
-            html += '        </button>';
-            html += '    </div>';
+            html += '            <button type="button" class="comment-delete-btn" onclick="deleteComment(' + comment.id + ')">Xóa</button>';
         }
         html += '        </div>';
-        html += '        <span class="comment-time">' + timeAgo + '</span>';
         html += '    </div>';
         html += '    <div class="comment-content">';
         html += '        ' + content;
@@ -452,8 +455,11 @@
         }
 
         const videoUrlID = (new URLSearchParams(window.location.search)).get('id');
+        const deleteUrl = COMMENT_API_URL + '?id=' + commentId;
+        console.log('Deleting comment, URL:', deleteUrl);
+
         try {
-            const response = await fetch(`${COMMENT_API_URL}?id=${commentId}`, { method: 'DELETE' });
+            const response = await fetch(deleteUrl, { method: 'DELETE' });
 
             if (response.status === 204) {
                 await fetchComments(videoUrlID);
