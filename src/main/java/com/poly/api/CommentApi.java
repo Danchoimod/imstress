@@ -1,3 +1,4 @@
+// File: com.poly.api.CommentApi.java
 package com.poly.api;
 
 import com.google.gson.Gson;
@@ -5,6 +6,7 @@ import com.google.gson.GsonBuilder;
 import com.poly.entities.Comment;
 import com.poly.reponse.CommentResponse;
 import com.poly.services.CommentServices;
+import com.poly.util.Utils; // Cần import Utils để đọc cookie
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -13,10 +15,30 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-@WebServlet(urlPatterns = {"/api/comment", "/api/comment/*"})
+@WebServlet(urlPatterns = "/api/comment")
 public class CommentApi extends HttpServlet {
+    private final Gson gson = new GsonBuilder().serializeNulls().create();
+
+    // Helper methods
+    private Integer getUserIdFromCookie(HttpServletRequest req) {
+        String userIdStr = Utils.getCookieValue(Utils.COOKIE_KEY_USER_ID, req);
+        try {
+            return userIdStr != null ? Integer.parseInt(userIdStr) : null;
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private void sendJson(HttpServletResponse resp, int status, Object data) throws IOException {
+        resp.setStatus(status);
+        resp.setContentType("application/json; charset=UTF-8");
+        resp.getWriter().println(gson.toJson(data));
+    }
+
 
     // Xử lý GET: Hiển thị danh sách comment theo video ID
     @Override
@@ -26,13 +48,12 @@ public class CommentApi extends HttpServlet {
 
         String videoIdParam = req.getParameter("videoid"); // Lấy tham số "videoid"
         if (videoIdParam == null) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing videoid parameter");
+            sendJson(resp, HttpServletResponse.SC_BAD_REQUEST, Map.of("error", "Missing videoid parameter"));
             return;
         }
 
         try {
             int videoId = Integer.parseInt(videoIdParam);
-            resp.setContentType("application/json; charset=UTF-8");
 
             List<Comment> comments = CommentServices.getCommentbyID(videoId);
             for (Comment entity : comments) {
@@ -41,30 +62,32 @@ public class CommentApi extends HttpServlet {
                 response.setContent(entity.getContent());
                 response.setStatus(entity.isStatus());
 
-                // ✅ THAY ĐỔI: Ánh xạ User Name thành USERNAME (Tên hiển thị)
-                response.setUserName(entity.getUser() != null ? entity.getUser().getUsername() : "Anonymous");
-                response.setUserId(entity.getUser() != null ? entity.getUser().getId() : null);
+                // ✅ CẬP NHẬT: Ánh xạ User ID và User Name
+                if (entity.getUser() != null) {
+                    response.setUserId(entity.getUser().getId());
+                    response.setUserName(entity.getUser().getUsername());
+                } else {
+                    response.setUserId(null);
+                    response.setUserName("Anonymous");
+                }
 
                 // Ánh xạ Parent ID
                 response.setParentCommentId(entity.getComment() != null ? entity.getComment().getId() : null);
 
-                // Bỏ qua createAt
-
                 responsecomment.add(response);
             }
 
-            Gson gson = new GsonBuilder().serializeNulls().create(); // Tạo Gson
-            resp.getWriter().println(gson.toJson(responsecomment)); // Trả về JSON
+            sendJson(resp, HttpServletResponse.SC_OK, responsecomment);
 
         } catch (NumberFormatException e) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid videoid format");
+            sendJson(resp, HttpServletResponse.SC_BAD_REQUEST, Map.of("error", "Invalid videoid format"));
         } catch (Exception e) {
             e.printStackTrace();
-            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "An error occurred while fetching comments.");
+            sendJson(resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, Map.of("error", "An error occurred while fetching comments."));
         }
     }
 
-    // THÊM: Xử lý POST: Thêm comment mới
+    // Xử lý POST: Thêm comment mới
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setCharacterEncoding("UTF-8");
@@ -77,7 +100,7 @@ public class CommentApi extends HttpServlet {
 
             // Kiểm tra các trường bắt buộc
             if (newComment == null || newComment.getContent() == null || newComment.getVideo() == null || newComment.getUser() == null) {
-                resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing required fields (content, videoId, userId)");
+                sendJson(resp, HttpServletResponse.SC_BAD_REQUEST, Map.of("error", "Missing required fields (content, videoId, userId)"));
                 return;
             }
 
@@ -85,75 +108,55 @@ public class CommentApi extends HttpServlet {
             Comment savedComment = CommentServices.insertComment(newComment);
 
             if (savedComment != null) {
-                resp.setStatus(HttpServletResponse.SC_CREATED);
-                // Trả về response của comment vừa tạo
-                resp.getWriter().println(gson.toJson(savedComment));
+                sendJson(resp, HttpServletResponse.SC_CREATED, savedComment);
             } else {
-                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to save comment.");
+                sendJson(resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, Map.of("error", "Failed to save comment."));
             }
 
         } catch (Exception e) {
             e.printStackTrace();
-            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error adding comment: " + e.getMessage());
+            sendJson(resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, Map.of("error", "Error adding comment: " + e.getMessage()));
         }
     }
 
-    private Integer extractCommentId(HttpServletRequest req) {
-        String idParam = req.getParameter("id");
-        if (idParam != null && !idParam.isBlank()) {
-            try {
-                return Integer.parseInt(idParam);
-            } catch (NumberFormatException ignored) {
-                return null;
-            }
-        }
-        String pathInfo = req.getPathInfo();
-        if (pathInfo != null && pathInfo.length() > 1) {
-            String candidate = pathInfo.substring(1);
-            try {
-                return Integer.parseInt(candidate);
-            } catch (NumberFormatException ignored) {
-                return null;
-            }
-        }
-        return null;
-    }
-
+    // ✅ PHƯƠNG THỨC MỚI: Xử lý DELETE comment
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setCharacterEncoding("UTF-8");
-        Integer commentId = extractCommentId(req);
-        if (commentId == null) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing or invalid id");
+
+        Integer currentUserId = getUserIdFromCookie(req);
+        if (currentUserId == null) {
+            sendJson(resp, HttpServletResponse.SC_UNAUTHORIZED, Map.of("error", "Vui lòng đăng nhập để thực hiện chức năng này."));
+            return;
+        }
+
+        String commentIdParam = req.getParameter("id"); // Lấy tham số 'id' từ query (theo JS trong watch.jsp)
+
+        if (commentIdParam == null || commentIdParam.isEmpty()) {
+            sendJson(resp, HttpServletResponse.SC_BAD_REQUEST, Map.of("error", "Thiếu tham số ID bình luận."));
             return;
         }
 
         try {
-            Integer currentUserId = CommentServices.getCurrentUserId(req);
-            if (currentUserId == null) {
-                resp.sendError(HttpServletResponse.SC_UNAUTHORIZED, "User not authenticated");
-                return;
-            }
+            int commentId = Integer.parseInt(commentIdParam);
 
-            Comment target = CommentServices.findById(commentId);
-            if (target == null) {
-                resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Comment not found");
-                return;
-            }
+            // Gọi Service để xóa (Service kiểm tra quyền sở hữu)
+            String errorMsg = CommentServices.deleteCommentIfOwned(commentId, currentUserId);
 
-            if (target.getUser() == null || target.getUser().getId() != currentUserId) {
-                resp.sendError(HttpServletResponse.SC_FORBIDDEN, "You cannot delete this comment");
-                return;
-            }
-
-            boolean deleted = CommentServices.deleteComment(commentId);
-            if (deleted) {
-                resp.setStatus(HttpServletResponse.SC_NO_CONTENT);
+            if (errorMsg == null) {
+                // Xóa thành công, trả về 200 OK với thông báo
+                sendJson(resp, HttpServletResponse.SC_OK, Map.of("message", "Bình luận đã được xóa."));
+            } else if (errorMsg.contains("quyền")) {
+                sendJson(resp, HttpServletResponse.SC_FORBIDDEN, Map.of("error", errorMsg)); // 403 Forbidden
             } else {
-                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to delete comment");
+                sendJson(resp, HttpServletResponse.SC_NOT_FOUND, Map.of("error", errorMsg)); // 404 Not Found
             }
+
         } catch (NumberFormatException e) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid id format");
+            sendJson(resp, HttpServletResponse.SC_BAD_REQUEST, Map.of("error", "ID bình luận không hợp lệ."));
+        } catch (Exception e) {
+            e.printStackTrace();
+            sendJson(resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, Map.of("error", "Lỗi server khi xóa bình luận: " + e.getMessage()));
         }
     }
 }

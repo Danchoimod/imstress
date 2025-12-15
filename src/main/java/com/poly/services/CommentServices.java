@@ -3,12 +3,10 @@ package com.poly.services;
 
 import com.poly.entities.Comment;
 import com.poly.util.JPAUtils;
-import com.poly.util.Utils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.Query;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,7 +47,7 @@ public class CommentServices {
             transaction.begin();
 
             // Thiết lập giá trị mặc định cho status trước khi lưu
-            if (comment.isStatus() == false) { // Dù đã được thiết lập mặc định, vẫn nên kiểm tra
+            if (comment.isStatus() == false) {
                 comment.setStatus(true);
             }
 
@@ -66,6 +64,10 @@ public class CommentServices {
             manager.close();
         }
     }
+
+    /**
+     * Lấy tất cả Comment (thường dùng cho Admin).
+     */
     public static List<Comment> getAllComments() {
         EntityManager manager = JPAUtils.getEntityManager();
         try {
@@ -116,51 +118,52 @@ public class CommentServices {
         }
     }
 
-    public static Comment findById(int id) {
-        EntityManager manager = JPAUtils.getEntityManager();
-        try {
-            return manager.find(Comment.class, id);
-        } finally {
-            if (manager != null) {
-                manager.close();
-            }
-        }
+    /**
+     * Helper: Tìm Comment theo ID trong một EntityManager.
+     */
+    private static Comment findById(int id, EntityManager manager) {
+        return manager.find(Comment.class, id);
     }
 
-    public static boolean deleteComment(int id) {
+    /**
+     * Xóa một Comment nếu comment đó thuộc sở hữu của người dùng hiện tại (Security Check).
+     * @param commentId ID của bình luận cần xóa.
+     * @param userId ID của người dùng đang cố gắng xóa (lấy từ cookie/session).
+     * @return null nếu thành công, chuỗi lỗi nếu thất bại.
+     */
+    public static String deleteCommentIfOwned(int commentId, int userId) {
         EntityManager manager = JPAUtils.getEntityManager();
         EntityTransaction transaction = manager.getTransaction();
         try {
-            Comment comment = manager.find(Comment.class, id);
-            if (comment == null) {
-                return false;
-            }
             transaction.begin();
-            manager.remove(comment);
+
+            Comment commentToDelete = findById(commentId, manager);
+
+            if (commentToDelete == null) {
+                transaction.rollback();
+                return "Bình luận không tồn tại.";
+            }
+
+            // KIỂM TRA QUYỀN SỞ HỮU
+            if (commentToDelete.getUser() == null || commentToDelete.getUser().getId() != userId) {
+                transaction.rollback();
+                return "Bạn không có quyền xóa bình luận này.";
+            }
+
+            // Xóa comment
+            manager.remove(manager.contains(commentToDelete) ? commentToDelete : manager.merge(commentToDelete));
+
             transaction.commit();
-            return true;
+            return null; // Xóa thành công
+
         } catch (Exception e) {
             if (transaction != null && transaction.isActive()) {
                 transaction.rollback();
             }
             e.printStackTrace();
-            return false;
+            return "Lỗi cơ sở dữ liệu khi xóa: " + e.getMessage();
         } finally {
-            if (manager != null) {
-                manager.close();
-            }
-        }
-    }
-
-    public static Integer getCurrentUserId(HttpServletRequest request) {
-        String userIdCookie = Utils.getCookieValue(Utils.COOKIE_KEY_USER_ID, request);
-        if (userIdCookie == null) {
-            return null;
-        }
-        try {
-            return Integer.parseInt(userIdCookie);
-        } catch (NumberFormatException e) {
-            return null;
+            if (manager != null) manager.close();
         }
     }
 }

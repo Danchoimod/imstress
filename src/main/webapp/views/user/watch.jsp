@@ -323,29 +323,33 @@
         return null;
     }
 
-    // ✅ CẬP NHẬT: Hàm render một comment
+    // ✅ CẬP NHẬT: Hàm render một comment (Sử dụng comment.userId)
     function renderComment(comment) {
         const userName = comment.userName || 'Anonymous';
         const content = comment.content || 'Không có nội dung.';
         const timeAgo = "Vừa xong"; // Cần logic tính thời gian thực
+        // So sánh ID người dùng đã đăng nhập với ID người đăng comment từ API
         const canDelete = LOGGED_IN_USER_ID !== null && Number(LOGGED_IN_USER_ID) === Number(comment.userId);
 
         let html = '';
         html += '<div class="comment-item">';
         html += '    <div class="comment-header">';
-        html += '        <div>';
+        html += '        <div class="comment-actions">';
         html += '            <span class="comment-author">' + userName + '</span>';
+        if (canDelete) {
+            // ✅ THÊM NÚT XÓA KÈM onclick
+            html += '    <div class="comment-actions">';
+            html += '        <button type="button" class="comment-delete-btn" onclick="deleteComment(' + comment.id + ')">';
+            html += '            <i class="bi bi-trash"></i> Xóa';
+            html += '        </button>';
+            html += '    </div>';
+        }
         html += '        </div>';
         html += '        <span class="comment-time">' + timeAgo + '</span>';
         html += '    </div>';
         html += '    <div class="comment-content">';
         html += '        ' + content;
         html += '    </div>';
-        if (canDelete) {
-            html += '    <div class="comment-actions">';
-            html += '        <button class="comment-delete-btn" onclick="deleteComment(' + comment.id + ')">Xóa</button>';
-            html += '    </div>';
-        }
         html += '</div>';
         return html;
     }
@@ -384,7 +388,7 @@
         }
     }
 
-    // ✅ CẬP NHẬT: Hàm xử lý việc gửi comment mới
+    // Hàm xử lý việc gửi comment mới
     async function postComment() {
         if (!LOGGED_IN_USER_ID) {
             alert("Vui lòng đăng nhập để bình luận.");
@@ -420,8 +424,8 @@
             });
 
             if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(errorText || "Lỗi khi gửi bình luận.");
+                const errorResult = await response.json().catch(() => ({ error: 'Lỗi không xác định.' }));
+                throw new Error(errorResult.error || "Lỗi khi gửi bình luận.");
             }
 
             alert("Bình luận đã được gửi thành công!");
@@ -437,6 +441,7 @@
         }
     }
 
+    // ✅ PHƯƠNG THỨC MỚI: Xử lý xóa comment
     async function deleteComment(commentId) {
         if (!LOGGED_IN_USER_ID) {
             alert('Vui lòng đăng nhập để xóa bình luận của bạn.');
@@ -449,15 +454,23 @@
         const videoUrlID = (new URLSearchParams(window.location.search)).get('id');
         try {
             const response = await fetch(`${COMMENT_API_URL}?id=${commentId}`, { method: 'DELETE' });
+
             if (response.status === 204) {
                 await fetchComments(videoUrlID);
                 return;
             }
-            const errorText = await response.text();
-            alert(errorText || 'Xóa bình luận thất bại.');
+
+            const result = await response.json().catch(() => ({ message: '', error: 'Lỗi không xác định.' }));
+
+            if (response.ok) {
+                alert(result.message || 'Bình luận đã được xóa thành công!');
+                await fetchComments(videoUrlID);
+            } else {
+                alert(result.error || 'Xóa bình luận thất bại.');
+            }
         } catch (error) {
             console.error('Lỗi khi xóa bình luận:', error);
-            alert('Không thể xóa bình luận lúc này.');
+            alert('Không thể kết nối server để xóa bình luận.');
         }
     }
 
@@ -492,7 +505,7 @@
         }
     }
 
-    // ✅ CẬP NHẬT: Thay thế listener cũ để gọi cả hai hàm
+    // Khởi tạo
     document.addEventListener('DOMContentLoaded', async () => {
         // Tải thông tin người dùng trước để có tên hiển thị cho comment input
         await fetchUserInfo();
