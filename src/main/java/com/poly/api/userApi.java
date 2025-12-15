@@ -30,6 +30,7 @@ public class userApi extends HttpServlet {
             response.setFullname(user.getName());
             response.setUsername(user.getUsername());
             response.setPhone(user.getPhone());
+            response.setRole(user.getRole());
 
             // 4. Trả về JSON Object (KHÔNG dùng List)
             Gson gson = new Gson();

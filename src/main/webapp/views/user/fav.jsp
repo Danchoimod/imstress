@@ -1,6 +1,5 @@
-// File: fav.jsp (Full Code đã sửa đổi)
-
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -162,7 +161,13 @@ class="profile-container">
                         <li><a href="${pageContext.request.contextPath}/profile"><i class="bi bi-person"></i> Tài khoản</a></li>
                         <div class="divider"></div>
 
-                    <li><a href="${pageContext.request.contextPath}/admin/dashboard"><i class="bi bi-house"></i> Quản trị viên</a></li>
+                                            <c:if test="${cookie.role != null && cookie.role.value == '3'}">
+                                                <li>
+                                                    <a href="${pageContext.request.contextPath}/admin/dashboard">
+                                                        <i class="bi bi-house"></i> Quản trị viên
+                                                    </a>
+                                                </li>
+                                            </c:if>
                         <li><a href="${pageContext.request.contextPath}/auth/logout"><i class="bi bi-box-arrow-right"></i> Đăng xuất</a></li>
                     </ul>
                 </div>

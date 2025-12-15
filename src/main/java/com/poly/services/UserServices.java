@@ -52,10 +52,9 @@ public class UserServices {
     public static User Login(String usernameOrEmail,String password){
         EntityManager manager = JPAUtils.getEntityManager();
         try {
-            String sql = "SELECT * FROM users WHERE username=?1 OR email=?2";
+            String sql = "SELECT * FROM users WHERE email=?1";
             Query query = manager.createNativeQuery(sql,User.class);
             query.setParameter(1,usernameOrEmail);
-            query.setParameter(2,usernameOrEmail);
 
             User user = (User) query.getSingleResult(); //ép kiểu trả về 1 object duy nhất
             /*Vì getSingleResult() chỉ trả về kiểu Object */

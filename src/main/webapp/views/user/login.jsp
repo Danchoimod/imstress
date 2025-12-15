@@ -5,8 +5,9 @@
 <meta charset="UTF-8">
 <title>Đăng nhập tài khoản</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <style>
-/* ... (CSS giữ nguyên) ... */
+/* ... (CSS giữ nguyên như cũ) ... */
 body {
     background: #181f36;
     min-height: 100vh;
@@ -38,26 +39,23 @@ body {
 .btn-custom:hover {
     background: #ffd54f;
 }
-/* Style mới cho nút Quay lại */
 .btn-back {
     background: transparent;
     color: #b0b8d1;
     font-weight: 600;
-    border: 1px solid #2c3557; /* Thêm viền để dễ nhìn */
+    border: 1px solid #2c3557;
     border-radius: 8px;
     transition: all 0.2s;
-    text-align: center; /* Đảm bảo chữ căn giữa */
-    padding: 10px 12px; /* Đồng bộ padding */
-    display: block; /* Đảm bảo nó chiếm toàn bộ chiều rộng */
-    text-decoration: none; /* Bỏ gạch chân mặc định của thẻ a */
+    text-align: center;
+    padding: 10px 12px;
+    display: block;
+    text-decoration: none;
 }
 .btn-back:hover {
     background: #2c3557;
     color: #fff;
     border-color: #ffe082;
 }
-/* Kết thúc style mới */
-
 .logo {
     display: flex;
     align-items: center;
@@ -119,9 +117,27 @@ body {
                 <div class="mb-3" style="font-size: 0.95rem; color: #b0b8d1;">
                     Nếu bạn chưa có tài khoản, <a href="${pageContext.request.contextPath}/auth/register" class="text-link">đăng ký</a>
                 </div>
+
+                <% if (request.getAttribute("errorMessage") != null) { %>
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert"
+                         style="background-color: #ff4444; border: none; color: #fff; border-radius: 8px; font-size: 0.9rem;">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <%= request.getAttribute("errorMessage") %>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                <% } %>
+
+                <% if (request.getAttribute("successMessage") != null) { %>
+                    <div class="alert alert-success alert-dismissible fade show" role="alert"
+                         style="background-color: #00C851; border: none; color: #fff; border-radius: 8px; font-size: 0.9rem;">
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        <%= request.getAttribute("successMessage") %>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                <% } %>
                 <form method="POST" action="${pageContext.request.contextPath}/auth/login">
                     <div class="mb-3">
-                        <label class="form-label">Email</label>
+                        <label class="form-label">Email / Tài khoản</label>
                         <input value="${bean.usernameOrEmail}" name="usernameOrEmail" type="text" class="form-control" placeholder="Tên tài khoản hoặc Email">
                         <small class="text-danger">${bean.errors.errUsernameOrEmail}</small>
                     </div>

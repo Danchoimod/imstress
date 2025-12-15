@@ -272,7 +272,7 @@ public class VideoServices {
 		EntityManager manager = JPAUtils.getEntityManager();
 		try {
 			// JPQL: Lọc video có trạng thái hoạt động (1) và danh mục hoạt động (1)
-			String jpql = "SELECT v FROM Video v JOIN v.category c WHERE v.status = 1 AND c.status = 1 ORDER BY v.createAt DESC";
+			String jpql = "SELECT v FROM Video v JOIN v.category c WHERE v.status = 1 AND c.status = 1 ORDER BY v.ID DESC";
 
 			videos = manager.createQuery(jpql, Video.class)
 					.getResultList();

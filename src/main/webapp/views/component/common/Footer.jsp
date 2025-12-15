@@ -141,12 +141,6 @@ line-height: 1.6;
     </style>
 </head>
 <body>
-    <div class="main-content container">
-        <div class="text-center">
-            <h2 class= "text-light">RoPhim - Phim hay cả rổ</h1>
-            <p class="lead">Nội dung trang web sẽ ở đây</p>
-        </div>
-    </div>
 
     <footer>
 

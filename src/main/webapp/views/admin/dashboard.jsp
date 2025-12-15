@@ -175,23 +175,6 @@ body {
                     </div>
                 </div>
             </div>
-            <div class="row">
-                <div class="col-lg-12">
-                    <div class="card shadow mb-4">
-                        <div class="card-header py-3">
-                            <h6 class="m-0 fw-bold text-primary">Các Video được xem nhiều nhất tuần này</h6>
-                        </div>
-                        <div class="card-body">
-                            <p>Sử dụng thư viện Chart.js hoặc thư viện bảng Bootstrap để hiển thị dữ liệu.</p>
-                            <ul>
-                                <li>Video A (1,200 lượt xem)</li>
-                                <li>Video B (950 lượt xem)</li>
-                                <li>Video C (800 lượt xem)</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 
