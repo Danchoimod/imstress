@@ -91,10 +91,10 @@ GO
 -- Chèn dữ liệu mẫu cho bảng categories
 INSERT INTO categories (name)
 VALUES
-    (N'Lập Trình Web'), -- ID=1
-    (N'Game Review'),    -- ID=2
-    (N'Tin Tức'),
-    (N'$kinh dị');
+    (N'anime'), -- ID=1
+    (N'action film'),    -- ID=2
+    (N'shortvideo'),
+    (N'horror');
 GO
 
 -- Chèn dữ liệu mẫu cho bảng videos
@@ -104,13 +104,13 @@ GO
 INSERT INTO videos (title, content, poster, url, create_at, view_count, status, cat_id, user_id)
 VALUES
     -- Video đã duyệt (Status=4) - Hiển thị trên trang chủ
-    (N'Hướng Dẫn Java Web Cơ Bản', N'Nội dung chi tiết về cách xây dựng ứng dụng Java Web với Servlet và JSP.', 'poster_java_web.jpg', 'https://www.youtube.com/watch?v=IpDNg7Xj2R4', '2025-11-20', 12500, 4, 1, 2),
+    (N'Hướng Dẫn Java Web Cơ Bản', N'Nội dung chi tiết về cách xây dựng ứng dụng Java Web với Servlet và JSP.', 'https://thanhnien.mediacdn.vn/uploaded/ngocthanh/2020_12_10/da-04_PBWC.jpg?width=500', 'https://www.youtube.com/watch?v=IpDNg7Xj2R4', '2025-11-20', 12500, 4, 1, 2),
 
     -- Video chờ duyệt (Status=1) - Chỉ Editer và Admin thấy
-    (N'Phân Tích Game Cyberpunk 2077', N'Đánh giá chuyên sâu về cốt truyện, đồ họa và gameplay của Cyberpunk 2077 sau bản cập nhật mới nhất.', 'poster_cybperunk.jpg', 'https://www.youtube.com/watch?v=niPkap1ozUA', '2025-11-25', 450, 1, 2, 2),
+    (N'Phân Tích Game Cyberpunk 2077', N'Đánh giá chuyên sâu về cốt truyện, đồ họa và gameplay của Cyberpunk 2077 sau bản cập nhật mới nhất.', 'https://media-cdn-v2.laodong.vn/Storage/NewsPortal/2022/1/24/998157/1990.jpg', 'https://www.youtube.com/watch?v=niPkap1ozUA', '2025-11-25', 450, 1, 2, 2),
 
     -- Video đang ẩn (Status=2) - Chỉ Editer và Admin thấy
-    (N'Tin Tức Công Nghệ Nóng Tuần Này', N'Tổng hợp các tin tức công nghệ mới nhất từ Apple, Google và Microsoft.', 'poster_news.jpg', 'https://youtu.be/psZ1g9fMfeo', '2025-11-28', 800, 2, 3, 1);
+    (N'Tin Tức Công Nghệ Nóng Tuần Này', N'Tổng hợp các tin tức công nghệ mới nhất từ Apple, Google và Microsoft.', 'https://upload.wikimedia.org/wikipedia/vi/4/42/%C3%81p_ph%C3%ADch_phim_M%E1%BA%AFt_bi%E1%BA%BFc.jpg', 'https://youtu.be/psZ1g9fMfeo', '2025-11-28', 800, 2, 3, 1);
 GO
 USE java4;
 GO
@@ -142,7 +142,7 @@ GO
 use java4;
 Select *from users;
 select *from comments;
-    select *from categories;
+select *from categories;
 select *from favourites;
 select *from videos;
 

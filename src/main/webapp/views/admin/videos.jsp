@@ -79,7 +79,7 @@ body {
                         <div class="col-md-6">
                             <label for="poster" class="form-label">Ảnh Poster (Thumbnail)</label>
                             <div class="input-group">
-                                <input type="text" class="form-control" id="poster" name="poster" readonly placeholder="URL ảnh poster">
+                                <input type="text" class="form-control" id="poster" name="poster" placeholder="URL ảnh poster">
                                 <button type="button" class="btn btn-outline-secondary" id="upload_widget">
                                     <i class="fa-solid fa-cloud-arrow-up me-2"></i> Tải lên
                                 </button>

@@ -76,8 +76,9 @@ body { background: #181f36; min-height: 100vh; }
 
                     <div class="mb-3">
                      <label class="form-label">Số điện thoại</label>
-                     <input value="${bean.phone}" name="phone" type="tel" class="form-control" placeholder="Số điện thoại (0xxxxxxxxx)">
-                     <small class="text-danger">${bean.errors.errPhone}</small>
+                <input value="${bean.phone}" name="phone" type="tel" class="form-control" placeholder="Số điện thoại (0xxxxxxxxx)">
+                <small class="text-danger">${bean.errors.errPhone}</small>
+                <small class="text-danger">${errDB.errPhone}</small>
                  </div>
 
                     <div class="mb-3">

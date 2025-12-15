@@ -127,7 +127,6 @@ public class UserServices {
         }
     }
 
-    // NEW METHOD: Update user status
     public static boolean updateUserStatus(int userId, int newStatus) {
         EntityManager manager = JPAUtils.getEntityManager();
         EntityTransaction transaction = manager.getTransaction();
@@ -155,7 +154,6 @@ public class UserServices {
         }
     }
 
-    // START NEW FEATURE: UPDATE USER PROFILE
     public static boolean updateUserProfile(User updatedUser) {
         EntityManager manager = JPAUtils.getEntityManager();
         EntityTransaction transaction = manager.getTransaction();
@@ -163,13 +161,11 @@ public class UserServices {
             User existingUser = manager.find(User.class, updatedUser.getId());
             if (existingUser == null) return false;
 
-            // TODO: Bổ sung kiểm tra trùng lặp Email/Phone trước khi merge
 
             if (!transaction.isActive()) {
                 transaction.begin();
             }
 
-            // Cập nhật các trường cho phép sửa: Name, Phone, Email
             existingUser.setName(updatedUser.getName());
             existingUser.setPhone(updatedUser.getPhone());
             existingUser.setEmail(updatedUser.getEmail());
@@ -189,5 +185,4 @@ public class UserServices {
             }
         }
     }
-    // END NEW FEATURE: UPDATE USER PROFILE
 }

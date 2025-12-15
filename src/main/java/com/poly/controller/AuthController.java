@@ -105,7 +105,7 @@ public class AuthController extends HttpServlet {
             if (bean.getErrors().isEmpty()) {
                 User user = UserServices.Login(bean.getUsernameOrEmail(), bean.getPassword());
 
-                if (user != null) {
+                if (user != null && user.getStatus() != 0) {
                     // Đăng nhập thành công
                     Utils.setCookie(Utils.COOKIE_KEY_USER_ID, String.valueOf(user.getId()), resp);
                     Utils.setCookie(Utils.COOKIE_KEY_ROLE, String.valueOf(user.getRole()), resp);
@@ -116,6 +116,8 @@ public class AuthController extends HttpServlet {
 
                     resp.sendRedirect(req.getContextPath() + "/");
                     return;
+                } else if (user.getStatus() == 0) {
+                    req.setAttribute("errorMessage", "Tài khoản đã bị vô hiệu hóa!");
                 } else {
                     // Đăng nhập thất bại (User null hoặc logic trả về null)
                     req.setAttribute("errorMessage", "Tài khoản hoặc mật khẩu không chính xác!");
